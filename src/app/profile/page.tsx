@@ -20,6 +20,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { HistoryGraph } from '@/components/profile/HistoryGraph';
+import { SummaryCard } from '@/components/profile/SummaryCard';
 
 export default function ProfilePage() {
   const [history, setHistory] = useState<TestResult[]>([]);
@@ -90,6 +91,11 @@ export default function ProfilePage() {
         <p className="text-muted-foreground">
           View your typing test history and track your progress over time.
         </p>
+      </div>
+
+      {/* Summary Statistics */}
+      <div className="mb-8">
+        <SummaryCard testHistory={history} />
       </div>
 
       {/* Performance Graph */}
