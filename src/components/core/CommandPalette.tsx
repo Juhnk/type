@@ -22,6 +22,9 @@ export function CommandPalette() {
   const currentMode = useGameStore((state) => state.testConfig.mode);
   const currentDuration = useGameStore((state) => state.testConfig.duration);
   const currentWordCount = useGameStore((state) => state.testConfig.wordCount);
+  const currentDifficulty = useGameStore(
+    (state) => state.testConfig.difficulty
+  );
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -186,21 +189,36 @@ export function CommandPalette() {
               handleCommand(() => setTestConfig({ difficulty: 'Normal' }))
             }
           >
-            <span>Normal Mode</span>
+            {currentDifficulty === 'Normal' && (
+              <Check className="mr-2 h-4 w-4" />
+            )}
+            <span className={currentDifficulty !== 'Normal' ? 'ml-6' : ''}>
+              Normal Mode
+            </span>
           </CommandItem>
           <CommandItem
             onSelect={() =>
               handleCommand(() => setTestConfig({ difficulty: 'Expert' }))
             }
           >
-            <span>Expert Mode</span>
+            {currentDifficulty === 'Expert' && (
+              <Check className="mr-2 h-4 w-4" />
+            )}
+            <span className={currentDifficulty !== 'Expert' ? 'ml-6' : ''}>
+              Expert Mode
+            </span>
           </CommandItem>
           <CommandItem
             onSelect={() =>
               handleCommand(() => setTestConfig({ difficulty: 'Master' }))
             }
           >
-            <span>Master Mode</span>
+            {currentDifficulty === 'Master' && (
+              <Check className="mr-2 h-4 w-4" />
+            )}
+            <span className={currentDifficulty !== 'Master' ? 'ml-6' : ''}>
+              Master Mode
+            </span>
           </CommandItem>
         </CommandGroup>
 
