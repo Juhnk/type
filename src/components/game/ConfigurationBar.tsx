@@ -11,16 +11,17 @@ export function ConfigurationBar() {
   const duration = useGameStore((state) => state.testConfig.duration);
   const wordCount = useGameStore((state) => state.testConfig.wordCount);
   const textSource = useGameStore((state) => state.testConfig.textSource);
+  const punctuation = useGameStore((state) => state.testConfig.punctuation);
   const customText = useGameStore((state) => state.testConfig.customText);
 
   const getTextSourceDisplay = (textSource: string) => {
     switch (textSource) {
-      case 'random':
-        return 'Random Words';
-      case 'custom':
-        return 'Custom Text';
-      case 'ai-generated':
-        return 'AI Generated';
+      case 'english-1k':
+        return 'English 1k';
+      case 'javascript':
+        return 'JavaScript';
+      case 'python':
+        return 'Python';
       default:
         return textSource;
     }
@@ -89,6 +90,17 @@ export function ConfigurationBar() {
           {getTextSourceDisplay(textSource)}
         </Badge>
       </div>
+
+      {punctuation && (
+        <div className="flex items-center gap-2">
+          <Badge
+            variant="outline"
+            className="hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors"
+          >
+            Punctuation
+          </Badge>
+        </div>
+      )}
 
       {textSource === 'custom' && customText && (
         <div className="flex items-center gap-2">

@@ -25,6 +25,12 @@ export function CommandPalette() {
   const currentDifficulty = useGameStore(
     (state) => state.testConfig.difficulty
   );
+  const currentTextSource = useGameStore(
+    (state) => state.testConfig.textSource
+  );
+  const currentPunctuation = useGameStore(
+    (state) => state.testConfig.punctuation
+  );
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -227,24 +233,56 @@ export function CommandPalette() {
         <CommandGroup heading="Word List">
           <CommandItem
             onSelect={() =>
-              handleCommand(() => setTestConfig({ textSource: 'random' }))
+              handleCommand(() => setTestConfig({ textSource: 'english-1k' }))
             }
           >
-            <span>Random Words</span>
+            {currentTextSource === 'english-1k' && (
+              <Check className="mr-2 h-4 w-4" />
+            )}
+            <span className={currentTextSource !== 'english-1k' ? 'ml-6' : ''}>
+              English 1k
+            </span>
           </CommandItem>
           <CommandItem
             onSelect={() =>
-              handleCommand(() => setTestConfig({ textSource: 'ai-generated' }))
+              handleCommand(() => setTestConfig({ textSource: 'javascript' }))
             }
           >
-            <span>AI Generated</span>
+            {currentTextSource === 'javascript' && (
+              <Check className="mr-2 h-4 w-4" />
+            )}
+            <span className={currentTextSource !== 'javascript' ? 'ml-6' : ''}>
+              JavaScript
+            </span>
           </CommandItem>
           <CommandItem
             onSelect={() =>
-              handleCommand(() => setTestConfig({ textSource: 'custom' }))
+              handleCommand(() => setTestConfig({ textSource: 'python' }))
             }
           >
-            <span>Custom Text</span>
+            {currentTextSource === 'python' && (
+              <Check className="mr-2 h-4 w-4" />
+            )}
+            <span className={currentTextSource !== 'python' ? 'ml-6' : ''}>
+              Python
+            </span>
+          </CommandItem>
+        </CommandGroup>
+
+        <CommandSeparator />
+
+        <CommandGroup heading="Modifiers">
+          <CommandItem
+            onSelect={() =>
+              handleCommand(() =>
+                setTestConfig({ punctuation: !currentPunctuation })
+              )
+            }
+          >
+            {currentPunctuation && <Check className="mr-2 h-4 w-4" />}
+            <span className={!currentPunctuation ? 'ml-6' : ''}>
+              Punctuation
+            </span>
           </CommandItem>
         </CommandGroup>
       </CommandList>
