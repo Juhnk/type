@@ -12,6 +12,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { HistoryGraph } from '@/components/profile/HistoryGraph';
 
 export default function ProfilePage() {
   const [history, setHistory] = useState<TestResult[]>([]);
@@ -84,6 +92,20 @@ export default function ProfilePage() {
         </p>
       </div>
 
+      {/* Performance Graph */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Performance Over Time</CardTitle>
+          <CardDescription>
+            Track your typing speed progress across all your tests
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <HistoryGraph testHistory={history} />
+        </CardContent>
+      </Card>
+
+      {/* History Table */}
       <div className="rounded-lg border">
         <Table>
           <TableCaption>
