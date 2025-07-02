@@ -1,3 +1,4 @@
+import React from 'react';
 import Link from 'next/link';
 import { Home, User, BarChart3, BrainCircuit, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
