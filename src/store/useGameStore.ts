@@ -2,9 +2,12 @@ import { create } from 'zustand';
 
 // Test Configuration Interface
 interface TestConfig {
+  mode: 'time' | 'words' | 'quote'; // Test mode
   duration: number; // Test duration in seconds
+  wordCount: 10 | 25 | 50 | 100; // Word count for words mode
   difficulty: 'Normal' | 'Expert' | 'Master';
-  textSource: 'random' | 'custom' | 'ai-generated';
+  textSource: 'english-1k' | 'javascript' | 'python';
+  punctuation: boolean; // Include punctuation in text
   customText?: string;
 }
 
@@ -53,9 +56,12 @@ interface GameState {
 
 // Default values
 const defaultTestConfig: TestConfig = {
+  mode: 'time',
   duration: 60,
+  wordCount: 50,
   difficulty: 'Normal',
-  textSource: 'random',
+  textSource: 'english-1k',
+  punctuation: false,
 };
 
 const defaultStats: GameStats = {
