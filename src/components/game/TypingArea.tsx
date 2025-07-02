@@ -4,11 +4,10 @@ import React, { useEffect } from 'react';
 import { useGameStore } from '@/store/useGameStore';
 
 export function TypingArea() {
-  const { charStates, gameStatus, handleKeyPress } = useGameStore((state) => ({
-    charStates: state.charStates,
-    gameStatus: state.gameStatus,
-    handleKeyPress: state.handleKeyPress,
-  }));
+  // Use atomic selectors to prevent infinite loop and optimize performance
+  const charStates = useGameStore((state) => state.charStates);
+  const gameStatus = useGameStore((state) => state.gameStatus);
+  const handleKeyPress = useGameStore((state) => state.handleKeyPress);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
