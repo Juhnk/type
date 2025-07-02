@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { inter, robotoMono } from '@/lib/fonts';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { CommandPalette } from '@/components/core/CommandPalette';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -24,6 +25,7 @@ export default function RootLayout({
           <main className="container mx-auto flex-1 px-6 py-8">{children}</main>
           <Footer />
         </div>
+        <CommandPalette />
       </body>
     </html>
   );
