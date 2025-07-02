@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { saveTestResult, type TestResult } from '@/lib/history';
 
 // Test Configuration Interface
 interface TestConfig {
@@ -216,13 +217,41 @@ export const useGameStore = create<GameState>((set, get) => ({
   completeGame: () =>
     set(() => {
       const now = Date.now();
+      const state = get();
+      const finalStats = {
+        ...state.stats,
+        endTime: now,
+        elapsedTime: now - state.stats.startTime,
+      };
+
+      // Save test result to localStorage
+      const testResult: TestResult = {
+        id: `test-${now}-${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: now,
+        mode: state.testConfig.mode,
+        duration:
+          state.testConfig.mode === 'time'
+            ? state.testConfig.duration
+            : undefined,
+        wordCount:
+          state.testConfig.mode === 'words'
+            ? state.testConfig.wordCount
+            : undefined,
+        textSource: state.testConfig.textSource,
+        difficulty: state.testConfig.difficulty,
+        punctuation: state.testConfig.punctuation,
+        wpm: finalStats.wpm,
+        accuracy: finalStats.accuracy,
+        totalChars: finalStats.totalChars,
+        correctChars: finalStats.correctChars,
+        incorrectChars: finalStats.incorrectChars,
+      };
+
+      saveTestResult(testResult);
+
       return {
         gameStatus: 'finished',
-        stats: {
-          ...get().stats,
-          endTime: now,
-          elapsedTime: now - get().stats.startTime,
-        },
+        stats: finalStats,
       };
     }),
 
