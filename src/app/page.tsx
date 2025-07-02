@@ -1,6 +1,7 @@
 import React from 'react';
 import { ConfigurationBar } from '@/components/game/ConfigurationBar';
 import { TypingArea } from '@/components/game/TypingArea';
+import { LiveStats } from '@/components/game/LiveStats';
 
 export default function Home() {
   return (
@@ -17,6 +18,8 @@ export default function Home() {
       <ConfigurationBar />
 
       <TypingArea />
+
+      <LiveStats />
     </div>
   );
 }
