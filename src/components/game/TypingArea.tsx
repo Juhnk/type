@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { useGameStore } from '@/store/useGameStore';
+import { ResultsCard } from './ResultsCard';
 
 export function TypingArea() {
   // Use atomic selectors to prevent infinite loop and optimize performance
@@ -72,13 +73,14 @@ export function TypingArea() {
             Start typing to begin the test...
           </p>
         )}
-
-        {gameStatus === 'finished' && (
-          <p className="mt-4 text-center text-sm font-medium">
-            Test completed! 🎉
-          </p>
-        )}
       </div>
+
+      {/* Show results card when test is finished */}
+      {gameStatus === 'finished' && (
+        <div className="mt-8">
+          <ResultsCard />
+        </div>
+      )}
     </div>
   );
 }
