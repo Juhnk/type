@@ -9,6 +9,7 @@ export function ConfigurationBar() {
   const mode = useGameStore((state) => state.testConfig.mode);
   const difficulty = useGameStore((state) => state.testConfig.difficulty);
   const duration = useGameStore((state) => state.testConfig.duration);
+  const wordCount = useGameStore((state) => state.testConfig.wordCount);
   const textSource = useGameStore((state) => state.testConfig.textSource);
   const customText = useGameStore((state) => state.testConfig.customText);
 
@@ -49,17 +50,33 @@ export function ConfigurationBar() {
         </Badge>
       </div>
 
-      <div className="flex items-center gap-2">
-        <span className="text-muted-foreground text-sm font-medium">
-          Duration:
-        </span>
-        <Badge
-          variant="secondary"
-          className="hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors"
-        >
-          {duration}s
-        </Badge>
-      </div>
+      {mode === 'time' && (
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground text-sm font-medium">
+            Duration:
+          </span>
+          <Badge
+            variant="secondary"
+            className="hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors"
+          >
+            {duration}s
+          </Badge>
+        </div>
+      )}
+
+      {mode === 'words' && (
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground text-sm font-medium">
+            Word Count:
+          </span>
+          <Badge
+            variant="secondary"
+            className="hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors"
+          >
+            {wordCount} words
+          </Badge>
+        </div>
+      )}
 
       <div className="flex items-center gap-2">
         <span className="text-muted-foreground text-sm font-medium">

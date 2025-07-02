@@ -4,6 +4,7 @@ import { create } from 'zustand';
 interface TestConfig {
   mode: 'time' | 'words' | 'quote'; // Test mode
   duration: number; // Test duration in seconds
+  wordCount: 10 | 25 | 50 | 100; // Word count for words mode
   difficulty: 'Normal' | 'Expert' | 'Master';
   textSource: 'random' | 'custom' | 'ai-generated';
   customText?: string;
@@ -56,6 +57,7 @@ interface GameState {
 const defaultTestConfig: TestConfig = {
   mode: 'time',
   duration: 60,
+  wordCount: 50,
   difficulty: 'Normal',
   textSource: 'random',
 };

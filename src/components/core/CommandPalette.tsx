@@ -20,6 +20,8 @@ export function CommandPalette() {
   const setTestConfig = useGameStore((state) => state.setTestConfig);
   const resetGame = useGameStore((state) => state.resetGame);
   const currentMode = useGameStore((state) => state.testConfig.mode);
+  const currentDuration = useGameStore((state) => state.testConfig.duration);
+  const currentWordCount = useGameStore((state) => state.testConfig.wordCount);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -80,31 +82,101 @@ export function CommandPalette() {
           </CommandItem>
         </CommandGroup>
 
-        <CommandSeparator />
+        {currentMode === 'time' && (
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="Duration">
+              <CommandItem
+                onSelect={() =>
+                  handleCommand(() => setTestConfig({ duration: 15 }))
+                }
+              >
+                {currentDuration === 15 && <Check className="mr-2 h-4 w-4" />}
+                <span className={currentDuration !== 15 ? 'ml-6' : ''}>
+                  15 seconds
+                </span>
+              </CommandItem>
+              <CommandItem
+                onSelect={() =>
+                  handleCommand(() => setTestConfig({ duration: 30 }))
+                }
+              >
+                {currentDuration === 30 && <Check className="mr-2 h-4 w-4" />}
+                <span className={currentDuration !== 30 ? 'ml-6' : ''}>
+                  30 seconds
+                </span>
+              </CommandItem>
+              <CommandItem
+                onSelect={() =>
+                  handleCommand(() => setTestConfig({ duration: 60 }))
+                }
+              >
+                {currentDuration === 60 && <Check className="mr-2 h-4 w-4" />}
+                <span className={currentDuration !== 60 ? 'ml-6' : ''}>
+                  60 seconds
+                </span>
+              </CommandItem>
+              <CommandItem
+                onSelect={() =>
+                  handleCommand(() => setTestConfig({ duration: 120 }))
+                }
+              >
+                {currentDuration === 120 && <Check className="mr-2 h-4 w-4" />}
+                <span className={currentDuration !== 120 ? 'ml-6' : ''}>
+                  120 seconds
+                </span>
+              </CommandItem>
+            </CommandGroup>
+          </>
+        )}
 
-        <CommandGroup heading="Duration">
-          <CommandItem
-            onSelect={() =>
-              handleCommand(() => setTestConfig({ duration: 30 }))
-            }
-          >
-            <span>30 seconds</span>
-          </CommandItem>
-          <CommandItem
-            onSelect={() =>
-              handleCommand(() => setTestConfig({ duration: 60 }))
-            }
-          >
-            <span>60 seconds</span>
-          </CommandItem>
-          <CommandItem
-            onSelect={() =>
-              handleCommand(() => setTestConfig({ duration: 120 }))
-            }
-          >
-            <span>120 seconds</span>
-          </CommandItem>
-        </CommandGroup>
+        {currentMode === 'words' && (
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="Word Count">
+              <CommandItem
+                onSelect={() =>
+                  handleCommand(() => setTestConfig({ wordCount: 10 }))
+                }
+              >
+                {currentWordCount === 10 && <Check className="mr-2 h-4 w-4" />}
+                <span className={currentWordCount !== 10 ? 'ml-6' : ''}>
+                  10 words
+                </span>
+              </CommandItem>
+              <CommandItem
+                onSelect={() =>
+                  handleCommand(() => setTestConfig({ wordCount: 25 }))
+                }
+              >
+                {currentWordCount === 25 && <Check className="mr-2 h-4 w-4" />}
+                <span className={currentWordCount !== 25 ? 'ml-6' : ''}>
+                  25 words
+                </span>
+              </CommandItem>
+              <CommandItem
+                onSelect={() =>
+                  handleCommand(() => setTestConfig({ wordCount: 50 }))
+                }
+              >
+                {currentWordCount === 50 && <Check className="mr-2 h-4 w-4" />}
+                <span className={currentWordCount !== 50 ? 'ml-6' : ''}>
+                  50 words
+                </span>
+              </CommandItem>
+              <CommandItem
+                onSelect={() =>
+                  handleCommand(() => setTestConfig({ wordCount: 100 }))
+                }
+              >
+                {currentWordCount === 100 && <Check className="mr-2 h-4 w-4" />}
+                <span className={currentWordCount !== 100 ? 'ml-6' : ''}>
+                  100 words
+                </span>
+              </CommandItem>
+            </CommandGroup>
+          </>
+        )}
 
         <CommandSeparator />
 
