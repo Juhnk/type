@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 // Test Configuration Interface
 interface TestConfig {
+  mode: 'time' | 'words' | 'quote'; // Test mode
   duration: number; // Test duration in seconds
   difficulty: 'Normal' | 'Expert' | 'Master';
   textSource: 'random' | 'custom' | 'ai-generated';
@@ -53,6 +54,7 @@ interface GameState {
 
 // Default values
 const defaultTestConfig: TestConfig = {
+  mode: 'time',
   duration: 60,
   difficulty: 'Normal',
   textSource: 'random',

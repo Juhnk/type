@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 
 export function ConfigurationBar() {
   // Use atomic selectors to prevent infinite loop and optimize performance
+  const mode = useGameStore((state) => state.testConfig.mode);
   const difficulty = useGameStore((state) => state.testConfig.difficulty);
   const duration = useGameStore((state) => state.testConfig.duration);
   const textSource = useGameStore((state) => state.testConfig.textSource);
@@ -28,6 +29,18 @@ export function ConfigurationBar() {
     <div className="bg-card flex flex-wrap items-center gap-3 rounded-lg border p-4">
       <div className="flex items-center gap-2">
         <span className="text-muted-foreground text-sm font-medium">Mode:</span>
+        <Badge
+          variant="secondary"
+          className="hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors"
+        >
+          {mode.charAt(0).toUpperCase() + mode.slice(1)}
+        </Badge>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <span className="text-muted-foreground text-sm font-medium">
+          Difficulty:
+        </span>
         <Badge
           variant="secondary"
           className="hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors"
