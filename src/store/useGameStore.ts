@@ -11,7 +11,7 @@ interface TestConfig {
 // Character State Interface
 interface CharState {
   char: string;
-  status: 'untyped' | 'correct' | 'incorrect' | 'current';
+  status: 'default' | 'correct' | 'incorrect' | 'current';
   timestamp?: number;
 }
 
@@ -28,7 +28,7 @@ interface GameStats {
 }
 
 // Game Status Type
-type GameStatus = 'idle' | 'ready' | 'active' | 'paused' | 'completed';
+type GameStatus = 'idle' | 'ready' | 'running' | 'finished';
 
 // Main Store Interface
 interface GameState {
@@ -43,13 +43,12 @@ interface GameState {
   // Actions
   setTestConfig: (config: Partial<TestConfig>) => void;
   setTextToType: (text: string) => void;
-  updateUserInput: (input: string) => void;
+  handleKeyPress: (key: string) => void;
   startGame: () => void;
   pauseGame: () => void;
   resetGame: () => void;
   completeGame: () => void;
   updateStats: () => void;
-  updateCharStates: () => void;
 }
 
 // Default values
@@ -69,14 +68,20 @@ const defaultStats: GameStats = {
   elapsedTime: 0,
 };
 
+// Sample text for development
+const sampleText = 'the quick brown fox jumps over the lazy dog';
+
 // Zustand Store
 export const useGameStore = create<GameState>((set, get) => ({
   // Initial state
   testConfig: defaultTestConfig,
-  textToType: '',
-  charStates: [],
+  textToType: sampleText,
+  charStates: sampleText.split('').map((char) => ({
+    char,
+    status: 'default' as const,
+  })),
   userInput: '',
-  gameStatus: 'idle',
+  gameStatus: 'ready',
   stats: defaultStats,
 
   // Actions
@@ -90,22 +95,91 @@ export const useGameStore = create<GameState>((set, get) => ({
       textToType: text,
       charStates: text.split('').map((char) => ({
         char,
-        status: 'untyped' as const,
+        status: 'default' as const,
       })),
       userInput: '',
       gameStatus: 'ready',
     })),
 
-  updateUserInput: (input: string) =>
-    set(() => {
-      get().updateCharStates();
-      get().updateStats();
-      return { userInput: input };
+  handleKeyPress: (key: string) =>
+    set((state) => {
+      const { gameStatus, userInput, textToType, testConfig } = state;
+
+      // Start game if ready
+      if (gameStatus === 'ready') {
+        set({
+          gameStatus: 'running',
+          stats: { ...state.stats, startTime: Date.now() },
+        });
+      }
+
+      // Handle backspace
+      if (key === 'Backspace') {
+        if (userInput.length === 0) return {};
+
+        const newInput = userInput.slice(0, -1);
+        const newCharStates = [...state.charStates];
+
+        // Reset the character that was just deleted
+        if (newCharStates[userInput.length - 1]) {
+          newCharStates[userInput.length - 1].status = 'default';
+        }
+
+        // Update current character marker
+        if (newCharStates[newInput.length]) {
+          newCharStates[newInput.length].status = 'current';
+        }
+
+        get().updateStats();
+        return { userInput: newInput, charStates: newCharStates };
+      }
+
+      // Handle character input
+      if (key.length === 1 && userInput.length < textToType.length) {
+        const index = userInput.length;
+        const expectedChar = textToType[index];
+        const isCorrect = key === expectedChar;
+
+        // Check difficulty modes
+        if (testConfig.difficulty === 'Master' && !isCorrect) {
+          get().completeGame();
+          return {};
+        }
+
+        const newInput = userInput + key;
+        const newCharStates = [...state.charStates];
+
+        // Update current character status
+        newCharStates[index] = {
+          char: expectedChar,
+          status: isCorrect ? 'correct' : 'incorrect',
+          timestamp: Date.now(),
+        };
+
+        // Update next character to current
+        if (newCharStates[index + 1]) {
+          newCharStates[index + 1].status = 'current';
+        }
+
+        // Update stats and check completion
+        setTimeout(() => {
+          get().updateStats();
+
+          // Check if test is complete
+          if (newInput.length >= textToType.length) {
+            get().completeGame();
+          }
+        }, 0);
+
+        return { userInput: newInput, charStates: newCharStates };
+      }
+
+      return {};
     }),
 
   startGame: () =>
     set(() => ({
-      gameStatus: 'active',
+      gameStatus: 'running',
       stats: {
         ...get().stats,
         startTime: Date.now(),
@@ -114,62 +188,36 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   pauseGame: () =>
     set(() => ({
-      gameStatus: 'paused',
+      gameStatus: 'ready',
     })),
 
   resetGame: () =>
-    set(() => ({
-      userInput: '',
-      gameStatus: 'idle',
-      stats: defaultStats,
-      charStates: get()
-        .textToType.split('')
-        .map((char) => ({
-          char,
-          status: 'untyped' as const,
-        })),
-    })),
+    set(() => {
+      const { textToType } = get();
+      const newCharStates = textToType.split('').map((char, index) => ({
+        char,
+        status: index === 0 ? ('current' as const) : ('default' as const),
+      }));
+
+      return {
+        userInput: '',
+        gameStatus: 'ready',
+        stats: defaultStats,
+        charStates: newCharStates,
+      };
+    }),
 
   completeGame: () =>
     set(() => {
       const now = Date.now();
-      get().updateStats();
       return {
-        gameStatus: 'completed',
+        gameStatus: 'finished',
         stats: {
           ...get().stats,
           endTime: now,
           elapsedTime: now - get().stats.startTime,
         },
       };
-    }),
-
-  updateCharStates: () =>
-    set((state) => {
-      const { userInput, textToType } = state;
-      const newCharStates = textToType.split('').map((char, index) => {
-        if (index < userInput.length) {
-          const userChar = userInput[index];
-          return {
-            char,
-            status:
-              userChar === char ? ('correct' as const) : ('incorrect' as const),
-            timestamp: Date.now(),
-          };
-        } else if (index === userInput.length) {
-          return {
-            char,
-            status: 'current' as const,
-          };
-        } else {
-          return {
-            char,
-            status: 'untyped' as const,
-          };
-        }
-      });
-
-      return { charStates: newCharStates };
     }),
 
   updateStats: () =>
@@ -193,11 +241,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       // Calculate accuracy
       const accuracy =
         totalChars > 0 ? Math.round((correctChars / totalChars) * 100) : 100;
-
-      // Check if test is complete
-      if (userInput.length >= textToType.length) {
-        get().completeGame();
-      }
 
       return {
         stats: {

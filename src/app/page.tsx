@@ -1,5 +1,6 @@
 import React from 'react';
 import { ConfigurationBar } from '@/components/game/ConfigurationBar';
+import { TypingArea } from '@/components/game/TypingArea';
 
 export default function Home() {
   return (
@@ -15,17 +16,7 @@ export default function Home() {
 
       <ConfigurationBar />
 
-      <div className="bg-card rounded-lg border p-8 text-center">
-        <h2 className="mb-4 text-2xl font-semibold">Ready to Start Typing?</h2>
-        <p className="text-muted-foreground mb-6">
-          Configure your test settings above and click start when ready.
-        </p>
-        <div className="space-y-4">
-          <div className="text-muted-foreground text-sm">
-            Typing interface will be implemented next...
-          </div>
-        </div>
-      </div>
+      <TypingArea />
     </div>
   );
 }
