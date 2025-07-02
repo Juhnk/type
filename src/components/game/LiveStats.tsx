@@ -4,10 +4,10 @@ import React from 'react';
 import { useGameStore } from '@/store/useGameStore';
 
 export function LiveStats() {
-  const { stats, gameStatus } = useGameStore((state) => ({
-    stats: state.stats,
-    gameStatus: state.gameStatus,
-  }));
+  // Use atomic selectors to prevent infinite loop and optimize performance
+  const wpm = useGameStore((state) => state.stats.wpm);
+  const accuracy = useGameStore((state) => state.stats.accuracy);
+  const gameStatus = useGameStore((state) => state.gameStatus);
 
   // Reduce opacity during typing to minimize distraction (GDD Section 3.2.1)
   const isRunning = gameStatus === 'running';
@@ -19,14 +19,12 @@ export function LiveStats() {
     >
       <div className="grid grid-cols-2 gap-6 text-center">
         <div className="space-y-1">
-          <div className="text-3xl font-bold tracking-tight">{stats.wpm}</div>
+          <div className="text-3xl font-bold tracking-tight">{wpm}</div>
           <div className="text-muted-foreground text-sm font-medium">WPM</div>
         </div>
 
         <div className="space-y-1">
-          <div className="text-3xl font-bold tracking-tight">
-            {stats.accuracy}%
-          </div>
+          <div className="text-3xl font-bold tracking-tight">{accuracy}%</div>
           <div className="text-muted-foreground text-sm font-medium">
             Accuracy
           </div>
