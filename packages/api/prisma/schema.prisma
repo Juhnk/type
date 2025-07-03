@@ -1,0 +1,54 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String         @id @default(cuid())
+  email        String         @unique
+  passwordHash String
+  createdAt    DateTime       @default(now()) @db.Timestamptz(3)
+  
+  userSettings UserSettings?
+  testResults  TestResult[]
+  
+  @@map("Users")
+}
+
+model UserSettings {
+  userId       String   @id
+  theme        String   @default("slate") @db.VarChar(50)
+  caretStyle   String   @default("line") @db.VarChar(20)
+  paceCaretWpm Int      @default(0)
+  
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  
+  @@map("UserSettings")
+}
+
+model TestResult {
+  id           String   @id @default(cuid())
+  userId       String
+  wpm          Int
+  accuracy     Float
+  rawWpm       Int
+  consistency  Float?
+  config       Json     @db.JsonB
+  tags         String[]
+  timestamp    DateTime @default(now()) @db.Timestamptz(3)
+  
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  
+  @@map("TestResults")
+}
