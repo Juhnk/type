@@ -22,6 +22,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useModalStore } from '@/store/useModalStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { registerUser, loginUser } from '@/lib/api-client';
 import { toast } from 'sonner';
 
@@ -34,6 +35,7 @@ type AuthFormData = z.infer<typeof authSchema>;
 
 export function AuthModal() {
   const { isAuthModalOpen, closeAuthModal } = useModalStore();
+  const { login } = useAuthStore();
 
   const loginForm = useForm<AuthFormData>({
     resolver: zodResolver(authSchema),
@@ -55,7 +57,8 @@ export function AuthModal() {
     try {
       const response = await loginUser(data);
       toast.success('Login successful!');
-      console.log('Login success:', response);
+      // Save user session to auth store
+      login(response.user, response.token);
       closeAuthModal();
       // Reset form after successful login
       loginForm.reset();
@@ -71,7 +74,8 @@ export function AuthModal() {
     try {
       const response = await registerUser(data);
       toast.success('Registration successful!');
-      console.log('Registration success:', response);
+      // Save user session to auth store
+      login(response.user, response.token);
       closeAuthModal();
       // Reset form after successful registration
       registerForm.reset();

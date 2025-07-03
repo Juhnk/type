@@ -5,9 +5,11 @@ import Link from 'next/link';
 import { Home, User, BarChart3, BrainCircuit, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useModalStore } from '@/store/useModalStore';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export function Header() {
   const { openAuthModal } = useModalStore();
+  const { user, logout } = useAuthStore();
   return (
     <header className="bg-background flex items-center justify-between border-b px-6 py-4">
       <div className="flex items-center space-x-4">
@@ -54,9 +56,18 @@ export function Header() {
         </Link>
       </nav>
 
-      <Button variant="outline" onClick={openAuthModal}>
-        Login
-      </Button>
+      {user ? (
+        <div className="flex items-center space-x-4">
+          <span className="text-muted-foreground text-sm">{user.email}</span>
+          <Button variant="outline" onClick={logout}>
+            Logout
+          </Button>
+        </div>
+      ) : (
+        <Button variant="outline" onClick={openAuthModal}>
+          Login
+        </Button>
+      )}
     </header>
   );
 }
