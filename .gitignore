@@ -40,3 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 packages/api/node_modules/
+
+# Docker volumes
+postgres_data/
+.docker/
