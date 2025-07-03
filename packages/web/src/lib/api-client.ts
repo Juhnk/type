@@ -1,3 +1,9 @@
+import {
+  getTestHistory,
+  clearTestHistory,
+  type TestResult,
+} from './history.js';
+
 const API_BASE_URL = 'http://localhost:3001';
 
 interface AuthResponse {
@@ -16,6 +22,11 @@ interface AuthRequest {
 
 interface ApiError {
   error: string;
+}
+
+interface BulkSyncResponse {
+  count: number;
+  message: string;
 }
 
 class ApiClient {
@@ -55,9 +66,54 @@ class ApiClient {
       body: JSON.stringify(data),
     });
   }
+
+  async syncLocalHistory(token: string): Promise<BulkSyncResponse | null> {
+    const localHistory = getTestHistory();
+
+    // If no local history exists, return null
+    if (localHistory.length === 0) {
+      return null;
+    }
+
+    // Transform local TestResult format to match API expected format
+    const transformedHistory = localHistory.map((test: TestResult) => ({
+      wpm: test.wpm,
+      accuracy: test.accuracy,
+      rawWpm: test.wpm, // Using wpm as rawWpm for now
+      consistency: null, // Not tracked in local format
+      config: {
+        mode: test.mode,
+        duration: test.duration,
+        wordCount: test.wordCount,
+        textSource: test.textSource,
+        difficulty: test.difficulty,
+        punctuation: test.punctuation,
+      },
+      tags: [], // Not tracked in local format
+      timestamp: new Date(test.timestamp).toISOString(),
+    }));
+
+    const response = await this.makeRequest<BulkSyncResponse>(
+      '/api/me/tests/bulk',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          testResults: transformedHistory,
+        }),
+      }
+    );
+
+    // Clear local history after successful sync
+    clearTestHistory();
+
+    return response;
+  }
 }
 
 export const apiClient = new ApiClient();
 
 // Export convenience functions
-export const { registerUser, loginUser } = apiClient;
+export const { registerUser, loginUser, syncLocalHistory } = apiClient;
