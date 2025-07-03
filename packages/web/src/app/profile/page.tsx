@@ -1,7 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import useSWR from 'swr';
 import { getTestHistory, type TestResult } from '@/lib/history';
+import { fetcher } from '@/lib/api-client';
+import { useAuthStore } from '@/store/useAuthStore';
 import {
   Table,
   TableBody,
@@ -22,25 +25,83 @@ import {
 import { HistoryGraph } from '@/components/profile/HistoryGraph';
 import { SummaryCard } from '@/components/profile/SummaryCard';
 
+// API test result interface (from backend)
+interface ApiTestResult {
+  id: string;
+  wpm: number;
+  accuracy: number;
+  rawWpm: number;
+  consistency: number | null;
+  config: {
+    mode?: string;
+    duration?: number;
+    wordCount?: number;
+    textSource?: string;
+    difficulty?: string;
+    punctuation?: boolean;
+  };
+  tags: string[];
+  timestamp: string;
+}
+
+// Transform API test results to match local TestResult format
+function transformApiResults(apiResults: ApiTestResult[]): TestResult[] {
+  return apiResults.map((result) => ({
+    id: result.id,
+    timestamp: new Date(result.timestamp).getTime(),
+    mode: (result.config.mode || 'time') as TestResult['mode'],
+    duration: result.config.duration,
+    wordCount: result.config.wordCount,
+    textSource: result.config.textSource || 'top-1k',
+    difficulty: result.config.difficulty || 'Normal',
+    punctuation: result.config.punctuation || false,
+    wpm: result.wpm,
+    accuracy: result.accuracy,
+    totalChars: 0, // Not stored in API
+    correctChars: 0, // Not stored in API
+    incorrectChars: 0, // Not stored in API
+  }));
+}
+
 export default function ProfilePage() {
-  const [history, setHistory] = useState<TestResult[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { token } = useAuthStore();
+  const [localHistory, setLocalHistory] = useState<TestResult[]>([]);
+  const [isLocalLoading, setIsLocalLoading] = useState(true);
 
+  // Use SWR for authenticated users
+  const {
+    data: apiData,
+    error,
+    isLoading: isApiLoading,
+  } = useSWR<ApiTestResult[]>(token ? '/api/me/tests' : null, (url) =>
+    fetcher(url, token!)
+  );
+
+  // Load local history for anonymous users
   useEffect(() => {
-    // Load test history from localStorage
-    const loadHistory = () => {
-      try {
-        const testHistory = getTestHistory();
-        setHistory(testHistory);
-      } catch (error) {
-        console.error('Error loading test history:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    if (!token) {
+      // Load test history from localStorage
+      const loadHistory = () => {
+        try {
+          const testHistory = getTestHistory();
+          setLocalHistory(testHistory);
+        } catch (error) {
+          console.error('Error loading test history:', error);
+        } finally {
+          setIsLocalLoading(false);
+        }
+      };
 
-    loadHistory();
-  }, []);
+      loadHistory();
+    } else {
+      setIsLocalLoading(false);
+    }
+  }, [token]);
+
+  // Determine which data to use
+  const history =
+    token && apiData ? transformApiResults(apiData) : localHistory;
+  const isLoading = token ? isApiLoading : isLocalLoading;
 
   // Format date for display
   const formatDate = (timestamp: number) => {
@@ -79,6 +140,18 @@ export default function ProfilePage() {
             <div className="h-12 rounded bg-gray-200"></div>
             <div className="h-12 rounded bg-gray-200"></div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-6 py-8">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+          <p className="text-red-800">
+            Error loading test history. Please try again later.
+          </p>
         </div>
       </div>
     );

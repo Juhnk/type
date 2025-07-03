@@ -29,6 +29,58 @@ export async function testRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // Get user's test history endpoint
+  fastify.get(
+    '/api/me/tests',
+    {
+      schema: {
+        response: {
+          200: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                wpm: { type: 'number' },
+                accuracy: { type: 'number' },
+                rawWpm: { type: 'number' },
+                consistency: { type: 'number' },
+                config: { type: 'object' },
+                tags: { type: 'array', items: { type: 'string' } },
+                timestamp: { type: 'string' }
+              }
+            }
+          },
+          400: {
+            type: 'object',
+            properties: {
+              error: { type: 'string' }
+            }
+          }
+        }
+      }
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const userId = (request.user as { userId: string }).userId;
+
+        const testResults = await prisma.testResult.findMany({
+          where: {
+            userId: userId
+          },
+          orderBy: {
+            timestamp: 'desc'
+          }
+        });
+
+        return reply.status(200).send(testResults);
+      } catch (error) {
+        fastify.log.error('Get test history error:', error);
+        return reply.status(400).send({ error: 'Failed to retrieve test history' });
+      }
+    }
+  );
+
   // Single test result endpoint
   fastify.post<{ Body: SingleTestBody }>(
     '/api/me/tests',
