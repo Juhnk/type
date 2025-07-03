@@ -102,7 +102,7 @@ export function ConfigurationBar() {
         </div>
       )}
 
-      {textSource === 'custom' && customText && (
+      {mode === 'quote' && customText && (
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground text-sm font-medium">
             Custom:
