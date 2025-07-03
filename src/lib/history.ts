@@ -135,3 +135,47 @@ export function getTestStatistics() {
     totalTimeTyping: Math.round(totalTimeTyping),
   };
 }
+
+/**
+ * Calculate average WPM from test results
+ * @param testResults - Array of test results
+ * @returns Average WPM rounded to nearest integer
+ */
+export function calculateAverageWpm(testResults: TestResult[]): number {
+  if (testResults.length === 0) return 0;
+  const totalWpm = testResults.reduce((sum, test) => sum + test.wpm, 0);
+  return Math.round(totalWpm / testResults.length);
+}
+
+/**
+ * Find highest WPM from test results
+ * @param testResults - Array of test results
+ * @returns Highest WPM achieved
+ */
+export function calculateHighestWpm(testResults: TestResult[]): number {
+  if (testResults.length === 0) return 0;
+  return Math.max(...testResults.map((test) => test.wpm));
+}
+
+/**
+ * Calculate average accuracy from test results
+ * @param testResults - Array of test results
+ * @returns Average accuracy as percentage rounded to nearest integer
+ */
+export function calculateAverageAccuracy(testResults: TestResult[]): number {
+  if (testResults.length === 0) return 0;
+  const totalAccuracy = testResults.reduce(
+    (sum, test) => sum + test.accuracy,
+    0
+  );
+  return Math.round(totalAccuracy / testResults.length);
+}
+
+/**
+ * Get total number of tests taken
+ * @param testResults - Array of test results
+ * @returns Total number of tests
+ */
+export function getTotalTestsTaken(testResults: TestResult[]): number {
+  return testResults.length;
+}
