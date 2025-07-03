@@ -1,8 +1,4 @@
-import {
-  getTestHistory,
-  clearTestHistory,
-  type TestResult,
-} from './history.js';
+import { getTestHistory, clearTestHistory, type TestResult } from './history';
 
 const API_BASE_URL = 'http://localhost:3001';
 
@@ -117,3 +113,23 @@ export const apiClient = new ApiClient();
 
 // Export convenience functions
 export const { registerUser, loginUser, syncLocalHistory } = apiClient;
+
+// SWR fetcher function for authenticated GET requests
+export async function fetcher(url: string, token: string) {
+  const response = await fetch(`${API_BASE_URL}${url}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const error = new Error('An error occurred while fetching the data.');
+    const data = await response.json();
+    (error as any).info = data;
+    (error as any).status = response.status;
+    throw error;
+  }
+
+  return response.json();
+}
