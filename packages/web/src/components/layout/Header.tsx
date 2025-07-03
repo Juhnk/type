@@ -1,9 +1,13 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
 import { Home, User, BarChart3, BrainCircuit, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useModalStore } from '@/store/useModalStore';
 
 export function Header() {
+  const { openAuthModal } = useModalStore();
   return (
     <header className="bg-background flex items-center justify-between border-b px-6 py-4">
       <div className="flex items-center space-x-4">
@@ -50,7 +54,9 @@ export function Header() {
         </Link>
       </nav>
 
-      <Button variant="outline">Login</Button>
+      <Button variant="outline" onClick={openAuthModal}>
+        Login
+      </Button>
     </header>
   );
 }
