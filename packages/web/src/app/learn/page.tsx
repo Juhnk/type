@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -12,13 +13,16 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Play } from 'lucide-react';
 import { toast } from 'sonner';
+import { useGameStore } from '@/store/useGameStore';
 
 export default function LearnPage() {
   const [topic, setTopic] = useState('');
   const [generatedText, setGeneratedText] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const router = useRouter();
+  const { setTextToType, setTestConfig } = useGameStore();
 
   const handleGenerate = async () => {
     if (!topic.trim()) {
@@ -49,6 +53,19 @@ export default function LearnPage() {
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handlePracticeText = () => {
+    // Set the game mode to 'quote' for custom text
+    setTestConfig({ mode: 'quote' });
+
+    // Load the AI-generated text into the game store
+    setTextToType(generatedText);
+
+    // Navigate to the main typing interface
+    router.push('/');
+
+    toast.success('Practice session started with your AI-generated text!');
   };
 
   const examplePrompts = [
@@ -94,15 +111,27 @@ export default function LearnPage() {
             </Button>
 
             {generatedText && (
-              <div className="space-y-2">
-                <Label htmlFor="generated-text">Generated Practice Text:</Label>
-                <Textarea
-                  id="generated-text"
-                  value={generatedText}
-                  readOnly
-                  className="min-h-[120px] resize-none"
-                  placeholder="Your generated text will appear here..."
-                />
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="generated-text">
+                    Generated Practice Text:
+                  </Label>
+                  <Textarea
+                    id="generated-text"
+                    value={generatedText}
+                    readOnly
+                    className="min-h-[120px] resize-none"
+                    placeholder="Your generated text will appear here..."
+                  />
+                </div>
+                <Button
+                  onClick={handlePracticeText}
+                  className="w-full"
+                  variant="default"
+                >
+                  <Play className="mr-2 h-4 w-4" />
+                  Practice this text
+                </Button>
               </div>
             )}
           </CardContent>
