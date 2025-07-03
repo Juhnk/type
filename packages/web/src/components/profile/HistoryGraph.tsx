@@ -9,7 +9,6 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
-  TooltipProps,
 } from 'recharts';
 import { type TestResult } from '@/lib/history';
 import {
@@ -55,7 +54,11 @@ export function HistoryGraph({ testHistory }: HistoryGraphProps) {
     active,
     payload,
     label,
-  }: TooltipProps<number, string>) => {
+  }: {
+    active?: boolean;
+    payload?: Array<{ payload: ChartDataPoint }>;
+    label?: string;
+  }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload as ChartDataPoint;
       return (

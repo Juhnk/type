@@ -73,7 +73,7 @@ export default function ProfilePage() {
     data: apiData,
     error,
     isLoading: isApiLoading,
-  } = useSWR<ApiTestResult[]>(token ? '/api/me/tests' : null, (url) =>
+  } = useSWR<ApiTestResult[]>(token ? '/api/me/tests' : null, (url: string) =>
     fetcher(url, token!)
   );
 
