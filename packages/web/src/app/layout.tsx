@@ -4,6 +4,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { CommandPalette } from '@/components/core/CommandPalette';
 import { AuthModal } from '@/components/auth/AuthModal';
+import { Toaster } from 'sonner';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -28,6 +29,7 @@ export default function RootLayout({
         </div>
         <CommandPalette />
         <AuthModal />
+        <Toaster />
       </body>
     </html>
   );

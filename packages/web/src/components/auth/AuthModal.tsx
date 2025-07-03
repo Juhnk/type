@@ -21,6 +21,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useModalStore } from '@/store/useModalStore';
+import { registerUser, loginUser } from '@/lib/api-client';
+import { toast } from 'sonner';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -48,14 +50,36 @@ export function AuthModal() {
     },
   });
 
-  const onLoginSubmit = (data: AuthFormData) => {
-    // TODO: Implement login logic
-    console.log('Login:', data);
+  const onLoginSubmit = async (data: AuthFormData) => {
+    try {
+      const response = await loginUser(data);
+      toast.success('Login successful!');
+      console.log('Login success:', response);
+      closeAuthModal();
+      // Reset form after successful login
+      loginForm.reset();
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Login failed';
+      toast.error(errorMessage);
+      console.error('Login error:', error);
+    }
   };
 
-  const onRegisterSubmit = (data: AuthFormData) => {
-    // TODO: Implement register logic
-    console.log('Register:', data);
+  const onRegisterSubmit = async (data: AuthFormData) => {
+    try {
+      const response = await registerUser(data);
+      toast.success('Registration successful!');
+      console.log('Registration success:', response);
+      closeAuthModal();
+      // Reset form after successful registration
+      registerForm.reset();
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Registration failed';
+      toast.error(errorMessage);
+      console.error('Registration error:', error);
+    }
   };
 
   return (
