@@ -188,4 +188,34 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
     }
   );
+
+  // TEMPORARY: Development token generation route (for testing protected endpoints)
+  fastify.get('/dev/get-token', async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      // Find the first user in the database
+      const user = await prisma.user.findFirst({
+        select: {
+          id: true,
+          email: true,
+          createdAt: true
+        }
+      });
+
+      if (!user) {
+        return reply.status(404).send({ error: 'No users found in database' });
+      }
+
+      // Generate JWT token for the user
+      const token = fastify.jwt.sign({ userId: user.id });
+
+      return reply.status(200).send({
+        user,
+        token,
+        message: 'Development token generated (for testing only)'
+      });
+    } catch (error) {
+      fastify.log.error('Dev token generation error:', error);
+      return reply.status(500).send({ error: 'Failed to generate development token' });
+    }
+  });
 }
