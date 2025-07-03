@@ -16,7 +16,7 @@ interface AuthStore {
 
 const TOKEN_KEY = 'typeamp_token';
 
-export const useAuthStore = create<AuthStore>((set, get) => ({
+export const useAuthStore = create<AuthStore>((set) => ({
   user: null,
   token: null,
 

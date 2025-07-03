@@ -16,10 +16,6 @@ interface AuthRequest {
   password: string;
 }
 
-interface ApiError {
-  error: string;
-}
-
 interface BulkSyncResponse {
   count: number;
   message: string;
@@ -124,10 +120,15 @@ export async function fetcher(url: string, token: string) {
   });
 
   if (!response.ok) {
-    const error = new Error('An error occurred while fetching the data.');
     const data = await response.json();
-    (error as any).info = data;
-    (error as any).status = response.status;
+    const error = new Error(
+      'An error occurred while fetching the data.'
+    ) as Error & {
+      info: unknown;
+      status: number;
+    };
+    error.info = data;
+    error.status = response.status;
     throw error;
   }
 

@@ -11,6 +11,7 @@ import { registerUser, loginUser } from '@/lib/api-client';
 vi.mock('@/lib/api-client', () => ({
   registerUser: vi.fn(),
   loginUser: vi.fn(),
+  syncLocalHistory: vi.fn(),
 }));
 
 // Mock the toast notifications
