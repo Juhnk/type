@@ -23,7 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useModalStore } from '@/store/useModalStore';
 import { useAuthStore } from '@/store/useAuthStore';
-import { registerUser, loginUser } from '@/lib/api-client';
+import { registerUser, loginUser, syncLocalHistory } from '@/lib/api-client';
 import { toast } from 'sonner';
 
 const authSchema = z.object({
@@ -62,6 +62,19 @@ export function AuthModal() {
       closeAuthModal();
       // Reset form after successful login
       loginForm.reset();
+
+      // Sync local history after successful login
+      try {
+        const syncResult = await syncLocalHistory(response.token);
+        if (syncResult) {
+          toast.success(
+            `Synced ${syncResult.count} test results to your account`
+          );
+        }
+      } catch (syncError) {
+        console.error('History sync error:', syncError);
+        toast.error('Failed to sync test history, but login was successful');
+      }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Login failed';
@@ -79,6 +92,21 @@ export function AuthModal() {
       closeAuthModal();
       // Reset form after successful registration
       registerForm.reset();
+
+      // Sync local history after successful registration
+      try {
+        const syncResult = await syncLocalHistory(response.token);
+        if (syncResult) {
+          toast.success(
+            `Synced ${syncResult.count} test results to your account`
+          );
+        }
+      } catch (syncError) {
+        console.error('History sync error:', syncError);
+        toast.error(
+          'Failed to sync test history, but registration was successful'
+        );
+      }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Registration failed';

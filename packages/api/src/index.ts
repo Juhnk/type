@@ -1,5 +1,6 @@
 import Fastify from 'fastify';
 import { authRoutes } from './routes/auth.js';
+import { testRoutes } from './routes/tests.js';
 
 const fastify = Fastify({
   logger: true
@@ -14,6 +15,7 @@ const start = async () => {
 
     // Register routes
     await fastify.register(authRoutes);
+    await fastify.register(testRoutes);
 
     // Health check route
     fastify.get('/', async (request, reply) => {
