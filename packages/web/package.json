@@ -2,9 +2,10 @@
   "name": "type",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "scripts": {
     "dev": "next dev",
+    "dev:setup": "./scripts/dev-setup.sh",
+    "dev:clean": "rm -rf .next && rm -rf node_modules/.cache && npm run dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

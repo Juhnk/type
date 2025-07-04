@@ -233,14 +233,26 @@ export function CommandPalette() {
         <CommandGroup heading="Word List">
           <CommandItem
             onSelect={() =>
-              handleCommand(() => setTestConfig({ textSource: 'english-1k' }))
+              handleCommand(() => setTestConfig({ textSource: 'english1k' }))
             }
           >
-            {currentTextSource === 'english-1k' && (
+            {currentTextSource === 'english1k' && (
               <Check className="mr-2 h-4 w-4" />
             )}
-            <span className={currentTextSource !== 'english-1k' ? 'ml-6' : ''}>
-              English 1k
+            <span className={currentTextSource !== 'english1k' ? 'ml-6' : ''}>
+              English 1K
+            </span>
+          </CommandItem>
+          <CommandItem
+            onSelect={() =>
+              handleCommand(() => setTestConfig({ textSource: 'english10k' }))
+            }
+          >
+            {currentTextSource === 'english10k' && (
+              <Check className="mr-2 h-4 w-4" />
+            )}
+            <span className={currentTextSource !== 'english10k' ? 'ml-6' : ''}>
+              English 10K
             </span>
           </CommandItem>
           <CommandItem

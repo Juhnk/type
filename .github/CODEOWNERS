@@ -1,0 +1,107 @@
+# TypeAmp Code Owners
+# This file defines who should review specific parts of the codebase
+# Learn more: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global owners - notified for all changes unless overridden below
+* @typeamp/core-team
+
+# Root configuration files
+/.github/ @typeamp/devops-team @typeamp/core-team
+/package.json @typeamp/core-team
+/package-lock.json @typeamp/core-team
+/.gitignore @typeamp/core-team
+/README.md @typeamp/docs-team @typeamp/core-team
+/CONTRIBUTING.md @typeamp/docs-team @typeamp/core-team
+
+# Frontend (Web Package)
+/packages/web/ @typeamp/frontend-team @typeamp/core-team
+
+# Frontend specific files
+/packages/web/src/components/ @typeamp/frontend-team
+/packages/web/src/pages/ @typeamp/frontend-team
+/packages/web/src/hooks/ @typeamp/frontend-team
+/packages/web/src/lib/ @typeamp/frontend-team
+/packages/web/src/styles/ @typeamp/frontend-team @typeamp/design-team
+
+# Frontend configuration
+/packages/web/next.config.js @typeamp/frontend-team @typeamp/devops-team
+/packages/web/tailwind.config.js @typeamp/frontend-team @typeamp/design-team
+/packages/web/package.json @typeamp/frontend-team @typeamp/core-team
+
+# Frontend testing
+/packages/web/src/**/*.test.ts @typeamp/frontend-team @typeamp/qa-team
+/packages/web/src/**/*.test.tsx @typeamp/frontend-team @typeamp/qa-team
+/packages/web/src/testing/ @typeamp/frontend-team @typeamp/qa-team
+/packages/web/vitest.config.ts @typeamp/frontend-team @typeamp/qa-team
+
+# Backend (API Package)
+/packages/api/ @typeamp/backend-team @typeamp/core-team
+
+# Backend specific files
+/packages/api/src/routes/ @typeamp/backend-team
+/packages/api/src/lib/ @typeamp/backend-team
+/packages/api/src/data/ @typeamp/backend-team @typeamp/content-team
+/packages/api/prisma/ @typeamp/backend-team @typeamp/database-team
+
+# Backend configuration
+/packages/api/package.json @typeamp/backend-team @typeamp/core-team
+/packages/api/src/index.ts @typeamp/backend-team @typeamp/core-team
+
+# Backend testing
+/packages/api/src/**/*.test.ts @typeamp/backend-team @typeamp/qa-team
+/packages/api/src/testing/ @typeamp/backend-team @typeamp/qa-team
+/packages/api/vitest.config.ts @typeamp/backend-team @typeamp/qa-team
+
+# API Documentation
+/packages/api/SPRINT2_COMPLETION.md @typeamp/docs-team @typeamp/backend-team
+
+# Word Lists and Content
+/packages/api/src/data/wordlists/ @typeamp/content-team @typeamp/backend-team
+
+# Database and Migrations
+/packages/api/prisma/schema.prisma @typeamp/database-team @typeamp/backend-team
+/packages/api/prisma/migrations/ @typeamp/database-team @typeamp/backend-team
+
+# Security and Authentication
+/packages/api/src/routes/auth.ts @typeamp/security-team @typeamp/backend-team
+/packages/web/src/lib/auth.ts @typeamp/security-team @typeamp/frontend-team
+
+# DevOps and CI/CD
+/.github/workflows/ @typeamp/devops-team @typeamp/core-team
+/docker-compose.yml @typeamp/devops-team
+/Dockerfile @typeamp/devops-team
+/.env.example @typeamp/devops-team @typeamp/core-team
+
+# Documentation
+/docs/ @typeamp/docs-team
+*.md @typeamp/docs-team
+
+# AI and Machine Learning Features
+/packages/api/src/routes/ai.ts @typeamp/ai-team @typeamp/backend-team
+/packages/web/src/lib/ai.ts @typeamp/ai-team @typeamp/frontend-team
+
+# Performance and Analytics
+/packages/web/src/lib/analytics.ts @typeamp/analytics-team @typeamp/frontend-team
+/packages/api/src/lib/monitoring.ts @typeamp/analytics-team @typeamp/backend-team
+
+# Testing Infrastructure
+/packages/web/src/testing/ @typeamp/qa-team
+/packages/api/src/testing/ @typeamp/qa-team
+/e2e/ @typeamp/qa-team
+/.github/workflows/ci.yml @typeamp/qa-team @typeamp/devops-team
+
+# Security Files
+/packages/api/src/lib/security.ts @typeamp/security-team
+/.github/workflows/codeql.yml @typeamp/security-team @typeamp/devops-team
+/.github/workflows/dependency-review.yml @typeamp/security-team @typeamp/devops-team
+
+# Design System
+/packages/web/src/components/ui/ @typeamp/design-team @typeamp/frontend-team
+/packages/web/src/styles/ @typeamp/design-team @typeamp/frontend-team
+
+# Mobile (if applicable)
+/packages/mobile/ @typeamp/mobile-team @typeamp/core-team
+
+# Third-party integrations
+/packages/api/src/integrations/ @typeamp/integrations-team @typeamp/backend-team
+/packages/web/src/integrations/ @typeamp/integrations-team @typeamp/frontend-team

@@ -32,8 +32,8 @@ describe('API Client Authentication', () => {
       });
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:3001/api/auth/register',
-        {
+        'http://localhost:3003/api/auth/register',
+        expect.objectContaining({
           headers: {
             'Content-Type': 'application/json',
           },
@@ -42,7 +42,8 @@ describe('API Client Authentication', () => {
             email: 'test@example.com',
             password: 'password123',
           }),
-        }
+          signal: expect.any(AbortSignal),
+        })
       );
 
       expect(result).toEqual(mockResponse);
@@ -114,8 +115,8 @@ describe('API Client Authentication', () => {
       });
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:3001/api/auth/login',
-        {
+        'http://localhost:3003/api/auth/login',
+        expect.objectContaining({
           headers: {
             'Content-Type': 'application/json',
           },
@@ -124,7 +125,8 @@ describe('API Client Authentication', () => {
             email: 'test@example.com',
             password: 'password123',
           }),
-        }
+          signal: expect.any(AbortSignal),
+        })
       );
 
       expect(result).toEqual(mockResponse);
@@ -201,7 +203,7 @@ describe('API Client Authentication', () => {
           email: 'test@example.com',
           password: 'password123',
         })
-      ).rejects.toThrow('An error occurred');
+      ).rejects.toThrow('Request failed with status');
     });
   });
 });

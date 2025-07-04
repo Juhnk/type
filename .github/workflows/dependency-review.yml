@@ -1,0 +1,302 @@
+name: Dependency Review
+
+on:
+  pull_request:
+    branches: [main, master, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
+jobs:
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          # Severity threshold for failing the build
+          fail-on-severity: moderate
+          # Allow licenses (comma-separated list)
+          allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD, CC0-1.0, Unlicense
+          # Deny licenses (comma-separated list)
+          deny-licenses: GPL-2.0, GPL-3.0, LGPL-2.0, LGPL-2.1, LGPL-3.0, AGPL-1.0, AGPL-3.0, CC-BY-SA-4.0
+          # Enable license checking
+          license-check: true
+          # Enable vulnerability scanning
+          vulnerability-check: true
+          # Comment on PR with results
+          comment-summary-in-pr: on-failure
+          # Create a GitHub issue for new vulnerabilities
+          warn-only: false
+
+  npm-audit:
+    name: NPM Security Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        id: npm-audit
+        run: |
+          # Run npm audit and capture output
+          npm audit --audit-level=moderate --json > audit-results.json || echo "audit-failed=true" >> $GITHUB_OUTPUT
+
+      - name: Parse audit results
+        id: parse-audit
+        run: |
+          if [ -f audit-results.json ]; then
+            # Extract vulnerability counts
+            critical=$(jq '.vulnerabilities.critical // 0' audit-results.json)
+            high=$(jq '.vulnerabilities.high // 0' audit-results.json)
+            moderate=$(jq '.vulnerabilities.moderate // 0' audit-results.json)
+            low=$(jq '.vulnerabilities.low // 0' audit-results.json)
+            
+            echo "critical=$critical" >> $GITHUB_OUTPUT
+            echo "high=$high" >> $GITHUB_OUTPUT
+            echo "moderate=$moderate" >> $GITHUB_OUTPUT
+            echo "low=$low" >> $GITHUB_OUTPUT
+            
+            # Calculate total vulnerabilities
+            total=$((critical + high + moderate + low))
+            echo "total=$total" >> $GITHUB_OUTPUT
+            
+            # Determine if we should fail
+            if [ $((critical + high + moderate)) -gt 0 ]; then
+              echo "should-fail=true" >> $GITHUB_OUTPUT
+            else
+              echo "should-fail=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "No audit results found"
+            echo "should-fail=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Comment on PR with audit results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const critical = '${{ steps.parse-audit.outputs.critical }}';
+            const high = '${{ steps.parse-audit.outputs.high }}';
+            const moderate = '${{ steps.parse-audit.outputs.moderate }}';
+            const low = '${{ steps.parse-audit.outputs.low }}';
+            const total = '${{ steps.parse-audit.outputs.total }}';
+            const shouldFail = '${{ steps.parse-audit.outputs.should-fail }}';
+            
+            let emoji = '✅';
+            let status = 'No security vulnerabilities found';
+            
+            if (shouldFail === 'true') {
+              emoji = '⚠️';
+              status = 'Security vulnerabilities detected';
+            }
+            
+            const body = `${emoji} **NPM Security Audit Results**
+            
+            **Summary:**
+            - Critical: ${critical}
+            - High: ${high}
+            - Moderate: ${moderate}
+            - Low: ${low}
+            - **Total**: ${total}
+            
+            **Status**: ${status}
+            
+            ${shouldFail === 'true' ? '⚠️ **Action Required**: Please review and fix the security vulnerabilities before merging.' : ''}
+            
+            Run \`npm audit\` locally to see detailed vulnerability information.`;
+            
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && comment.body.includes('NPM Security Audit Results')
+            );
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+
+      - name: Fail on high-severity vulnerabilities
+        if: steps.parse-audit.outputs.should-fail == 'true'
+        run: |
+          echo "❌ High-severity vulnerabilities found. Please fix before merging."
+          exit 1
+
+  license-check:
+    name: License Compliance Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install license-checker
+        run: npm install -g license-checker
+
+      - name: Check licenses
+        id: license-check
+        run: |
+          # Generate license report
+          license-checker --json --out license-report.json
+          
+          # Check for problematic licenses
+          PROBLEMATIC_LICENSES="GPL-2.0,GPL-3.0,LGPL-2.0,LGPL-2.1,LGPL-3.0,AGPL-1.0,AGPL-3.0,CC-BY-SA-4.0"
+          
+          if license-checker --failOn "$PROBLEMATIC_LICENSES" --production; then
+            echo "license-check-passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "license-check-passed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload license report
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-report
+          path: license-report.json
+          retention-days: 30
+
+      - name: Comment on PR with license results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const passed = '${{ steps.license-check.outputs.license-check-passed }}';
+            const emoji = passed === 'true' ? '✅' : '⚠️';
+            const status = passed === 'true' ? 'All licenses are compliant' : 'License compliance issues detected';
+            
+            const body = `${emoji} **License Compliance Check**
+            
+            **Status**: ${status}
+            
+            ${passed === 'false' ? '⚠️ **Action Required**: Some dependencies have incompatible licenses. Please review the license report.' : ''}
+            
+            **Allowed Licenses**: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD, CC0-1.0, Unlicense
+            **Prohibited Licenses**: GPL-2.0, GPL-3.0, LGPL-2.0, LGPL-2.1, LGPL-3.0, AGPL-1.0, AGPL-3.0, CC-BY-SA-4.0
+            
+            Download the license report from the workflow artifacts for detailed information.`;
+            
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && comment.body.includes('License Compliance Check')
+            );
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+
+  summary:
+    name: Summary
+    runs-on: ubuntu-latest
+    needs: [dependency-review, npm-audit, license-check]
+    if: always()
+
+    steps:
+      - name: Generate summary
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const depReview = '${{ needs.dependency-review.result }}';
+            const npmAudit = '${{ needs.npm-audit.result }}';
+            const licenseCheck = '${{ needs.license-check.result }}';
+            
+            const getEmoji = (result) => {
+              switch(result) {
+                case 'success': return '✅';
+                case 'failure': return '❌';
+                case 'cancelled': return '⏸️';
+                case 'skipped': return '⏭️';
+                default: return '❓';
+              }
+            };
+            
+            const summary = `## 🔍 Dependency Review Summary
+            
+            | Check | Status | Result |
+            |-------|--------|--------|
+            | Dependency Review | ${getEmoji(depReview)} | ${depReview} |
+            | NPM Security Audit | ${getEmoji(npmAudit)} | ${npmAudit} |
+            | License Compliance | ${getEmoji(licenseCheck)} | ${licenseCheck} |
+            
+            **Overall Status**: ${depReview === 'success' && npmAudit === 'success' && licenseCheck === 'success' ? '✅ All checks passed' : '⚠️ Some checks failed'}
+            
+            ---
+            
+            **Next Steps:**
+            ${depReview !== 'success' || npmAudit !== 'success' || licenseCheck !== 'success' ? 
+              '- Review the failed checks above\n- Fix any security vulnerabilities\n- Ensure license compliance\n- Re-run the workflow' : 
+              '- All dependency checks passed\n- Ready for review and merge'}`;
+            
+            await core.summary
+              .addHeading('Dependency Review Results')
+              .addRaw(summary)
+              .write();

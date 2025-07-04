@@ -1,0 +1,338 @@
+name: Auto-merge Dependabot
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+  checks: read
+
+jobs:
+  auto-merge:
+    name: Auto-merge Dependabot PRs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    # Only run on Dependabot PRs
+    if: github.actor == 'dependabot[bot]'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get Dependabot metadata
+        id: dependabot-metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Evaluate auto-merge conditions
+        id: evaluate
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const metadata = ${{ steps.dependabot-metadata.outputs.metadata }};
+            const updateType = '${{ steps.dependabot-metadata.outputs.update-type }}';
+            const dependencyType = '${{ steps.dependabot-metadata.outputs.dependency-type }}';
+            
+            console.log('Dependabot metadata:', metadata);
+            console.log('Update type:', updateType);
+            console.log('Dependency type:', dependencyType);
+            
+            // Auto-merge conditions
+            const allowedUpdateTypes = ['version-update:semver-patch', 'version-update:semver-minor'];
+            const allowedDependencyTypes = ['direct:development', 'indirect'];
+            
+            // Check if this is a security update
+            const isSecurityUpdate = metadata.some(dep => dep['security-advisories'] && dep['security-advisories'].length > 0);
+            
+            // Determine if we should auto-merge
+            let shouldAutoMerge = false;
+            let reason = '';
+            
+            if (isSecurityUpdate) {
+              shouldAutoMerge = true;
+              reason = 'Security update detected';
+            } else if (allowedUpdateTypes.includes(updateType) && allowedDependencyTypes.includes(dependencyType)) {
+              shouldAutoMerge = true;
+              reason = `${updateType} update for ${dependencyType} dependency`;
+            } else {
+              reason = `Update type: ${updateType}, Dependency type: ${dependencyType} - requires manual review`;
+            }
+            
+            console.log('Should auto-merge:', shouldAutoMerge);
+            console.log('Reason:', reason);
+            
+            core.setOutput('should-auto-merge', shouldAutoMerge);
+            core.setOutput('reason', reason);
+            core.setOutput('is-security-update', isSecurityUpdate);
+
+      - name: Wait for CI checks
+        if: steps.evaluate.outputs.should-auto-merge == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const maxWaitMinutes = 15;
+            const checkInterval = 30000; // 30 seconds
+            const maxAttempts = (maxWaitMinutes * 60 * 1000) / checkInterval;
+            
+            let attempts = 0;
+            let allChecksPassed = false;
+            
+            while (attempts < maxAttempts && !allChecksPassed) {
+              console.log(`Checking CI status... Attempt ${attempts + 1}/${maxAttempts}`);
+              
+              try {
+                // Get the latest commit status
+                const { data: statusData } = await github.rest.repos.getCombinedStatusForRef({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: context.payload.pull_request.head.sha
+                });
+                
+                // Get check runs
+                const { data: checkRuns } = await github.rest.checks.listForRef({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: context.payload.pull_request.head.sha
+                });
+                
+                console.log('Combined status:', statusData.state);
+                console.log('Check runs count:', checkRuns.check_runs.length);
+                
+                // Check if all statuses are successful
+                const statusSuccess = statusData.state === 'success' || statusData.statuses.length === 0;
+                
+                // Check if all check runs are successful
+                const checkRunsSuccess = checkRuns.check_runs.every(run => 
+                  run.conclusion === 'success' || run.conclusion === 'neutral' || run.conclusion === 'skipped'
+                );
+                
+                // Check if any check runs are still pending
+                const hasPendingChecks = checkRuns.check_runs.some(run => 
+                  run.status === 'queued' || run.status === 'in_progress'
+                );
+                
+                console.log('Status success:', statusSuccess);
+                console.log('Check runs success:', checkRunsSuccess);
+                console.log('Has pending checks:', hasPendingChecks);
+                
+                if (statusSuccess && checkRunsSuccess && !hasPendingChecks) {
+                  allChecksPassed = true;
+                  console.log('✅ All CI checks passed!');
+                  break;
+                }
+                
+                // Check for failed checks
+                const hasFailedChecks = checkRuns.check_runs.some(run => 
+                  run.conclusion === 'failure' || run.conclusion === 'cancelled' || run.conclusion === 'timed_out'
+                );
+                
+                const hasFailedStatus = statusData.state === 'failure' || statusData.state === 'error';
+                
+                if (hasFailedChecks || hasFailedStatus) {
+                  console.log('❌ CI checks failed. Aborting auto-merge.');
+                  core.setFailed('CI checks failed');
+                  return;
+                }
+                
+              } catch (error) {
+                console.log('Error checking CI status:', error.message);
+              }
+              
+              attempts++;
+              if (attempts < maxAttempts && !allChecksPassed) {
+                console.log(`Waiting ${checkInterval / 1000} seconds before next check...`);
+                await new Promise(resolve => setTimeout(resolve, checkInterval));
+              }
+            }
+            
+            if (!allChecksPassed) {
+              console.log('❌ Timeout waiting for CI checks to complete');
+              core.setFailed('Timeout waiting for CI checks');
+            }
+
+      - name: Comment on PR before auto-merge
+        if: steps.evaluate.outputs.should-auto-merge == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const reason = '${{ steps.evaluate.outputs.reason }}';
+            const isSecurityUpdate = '${{ steps.evaluate.outputs.is-security-update }}';
+            
+            const securityBadge = isSecurityUpdate === 'true' ? '🔒 **Security Update**' : '';
+            
+            const body = `🤖 **Auto-merging Dependabot PR**
+            
+            ${securityBadge}
+            
+            **Reason**: ${reason}
+            
+            **Auto-merge conditions met:**
+            - ✅ Created by Dependabot
+            - ✅ CI checks passed
+            - ✅ Update type/dependency type approved for auto-merge
+            
+            This PR will be automatically merged in a few moments.
+            
+            ---
+            
+            If you need to prevent this auto-merge, you can:
+            - Add the label \`no-auto-merge\` to this PR
+            - Convert this PR to draft
+            - Close and reopen the PR`;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+
+      - name: Check for no-auto-merge label
+        if: steps.evaluate.outputs.should-auto-merge == 'true'
+        id: check-labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: labels } = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            
+            const hasNoAutoMergeLabel = labels.some(label => 
+              label.name.toLowerCase().includes('no-auto-merge') || 
+              label.name.toLowerCase().includes('hold')
+            );
+            
+            console.log('Has no-auto-merge label:', hasNoAutoMergeLabel);
+            core.setOutput('has-no-auto-merge', hasNoAutoMergeLabel);
+
+      - name: Auto-merge PR
+        if: steps.evaluate.outputs.should-auto-merge == 'true' && steps.check-labels.outputs.has-no-auto-merge == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              console.log('Attempting to auto-merge PR...');
+              
+              // Enable auto-merge with squash
+              await github.rest.pulls.merge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number,
+                merge_method: 'squash',
+                commit_title: `${context.payload.pull_request.title} (#${context.issue.number})`,
+                commit_message: `${context.payload.pull_request.body || ''}\n\nAuto-merged by Dependabot workflow`
+              });
+              
+              console.log('✅ PR auto-merged successfully!');
+              
+            } catch (error) {
+              console.log('❌ Auto-merge failed:', error.message);
+              
+              // Comment on the PR about the failure
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `❌ **Auto-merge failed**
+                
+                Error: ${error.message}
+                
+                Please manually review and merge this PR.`
+              });
+              
+              core.setFailed(`Auto-merge failed: ${error.message}`);
+            }
+
+      - name: Comment on skipped auto-merge
+        if: steps.evaluate.outputs.should-auto-merge == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const reason = '${{ steps.evaluate.outputs.reason }}';
+            
+            const body = `🤖 **Dependabot PR - Manual Review Required**
+            
+            **Reason**: ${reason}
+            
+            **Auto-merge conditions:**
+            - ✅ Created by Dependabot
+            - ❌ Update type/dependency type requires manual review
+            
+            This PR requires manual review before merging.
+            
+            **Auto-merge is allowed for:**
+            - Patch and minor updates for development dependencies
+            - Security updates (any severity)
+            - Indirect dependencies (patch/minor)
+            
+            Please review the changes and merge manually if appropriate.`;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+
+  summary:
+    name: Summary
+    runs-on: ubuntu-latest
+    needs: auto-merge
+    if: always() && github.actor == 'dependabot[bot]'
+
+    steps:
+      - name: Generate summary
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const result = '${{ needs.auto-merge.result }}';
+            const prNumber = context.issue.number;
+            const prTitle = context.payload.pull_request.title;
+            
+            let emoji = '✅';
+            let status = 'Auto-merge completed';
+            
+            if (result === 'failure') {
+              emoji = '❌';
+              status = 'Auto-merge failed';
+            } else if (result === 'cancelled') {
+              emoji = '⏸️';
+              status = 'Auto-merge cancelled';
+            } else if (result === 'skipped') {
+              emoji = '⏭️';
+              status = 'Auto-merge skipped';
+            }
+            
+            const summary = `${emoji} **Dependabot Auto-merge Summary**
+            
+            **PR**: #${prNumber} - ${prTitle}
+            **Status**: ${status}
+            **Result**: ${result}
+            
+            **Workflow Details:**
+            - **Actor**: ${context.actor}
+            - **Event**: ${context.eventName}
+            - **Commit**: ${context.sha.substring(0, 7)}
+            
+            ${result === 'success' ? '✅ PR was automatically merged successfully!' : ''}
+            ${result === 'failure' ? '❌ Auto-merge failed. Manual intervention required.' : ''}
+            ${result === 'skipped' ? '⏭️ Auto-merge was skipped. Manual review required.' : ''}`;
+            
+            await core.summary
+              .addHeading('Dependabot Auto-merge Results')
+              .addRaw(summary)
+              .write();

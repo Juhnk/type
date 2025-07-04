@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { saveTestResult, type TestResult } from '@/lib/history';
-import { saveSingleTest } from '@/lib/api-client';
+import { saveSingleTest, getWords } from '@/lib/api-client';
 import { useAuthStore } from './useAuthStore';
 
 // Test Configuration Interface
@@ -9,7 +9,7 @@ interface TestConfig {
   duration: number; // Test duration in seconds
   wordCount: 10 | 25 | 50 | 100; // Word count for words mode
   difficulty: 'Normal' | 'Expert' | 'Master';
-  textSource: 'english-1k' | 'javascript' | 'python';
+  textSource: 'english1k' | 'english10k' | 'javascript' | 'python';
   punctuation: boolean; // Include punctuation in text
   customText?: string;
 }
@@ -45,10 +45,13 @@ interface GameState {
   userInput: string;
   gameStatus: GameStatus;
   stats: GameStats;
+  isLoadingWords: boolean;
+  wordsError: string | null;
 
   // Actions
   setTestConfig: (config: Partial<TestConfig>) => void;
   setTextToType: (text: string) => void;
+  loadWordsFromAPI: () => Promise<void>;
   handleKeyPress: (key: string) => void;
   startGame: () => void;
   pauseGame: () => void;
@@ -63,7 +66,7 @@ const defaultTestConfig: TestConfig = {
   duration: 60,
   wordCount: 50,
   difficulty: 'Normal',
-  textSource: 'english-1k',
+  textSource: 'english1k',
   punctuation: false,
 };
 
@@ -92,12 +95,20 @@ export const useGameStore = create<GameState>((set, get) => ({
   userInput: '',
   gameStatus: 'ready',
   stats: defaultStats,
+  isLoadingWords: false,
+  wordsError: null,
 
   // Actions
-  setTestConfig: (config: Partial<TestConfig>) =>
+  setTestConfig: (config: Partial<TestConfig>) => {
     set((state) => ({
       testConfig: { ...state.testConfig, ...config },
-    })),
+    }));
+
+    // Load new words if textSource changed
+    if (config.textSource || config.wordCount || config.mode) {
+      get().loadWordsFromAPI();
+    }
+  },
 
   setTextToType: (text: string) =>
     set(() => ({
@@ -109,6 +120,50 @@ export const useGameStore = create<GameState>((set, get) => ({
       userInput: '',
       gameStatus: 'ready',
     })),
+
+  loadWordsFromAPI: async () => {
+    const { testConfig } = get();
+
+    set({ isLoadingWords: true, wordsError: null });
+
+    try {
+      // Calculate word count based on mode
+      let wordLimit = 100; // Default for time mode
+
+      if (testConfig.mode === 'words') {
+        wordLimit = testConfig.wordCount;
+      } else if (testConfig.mode === 'time') {
+        // Estimate words needed based on duration (assuming 40 WPM average)
+        wordLimit = Math.max(100, Math.ceil((testConfig.duration * 40) / 60));
+      }
+
+      const response = await getWords(testConfig.textSource, wordLimit, true);
+
+      if (response.words && response.words.length > 0) {
+        // Join words with spaces to create text
+        const text = response.words.join(' ');
+        get().setTextToType(text);
+      } else {
+        throw new Error('No words received from API');
+      }
+
+      set({ isLoadingWords: false });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to load words';
+      set({
+        isLoadingWords: false,
+        wordsError: errorMessage,
+        // Fall back to sample text on error
+        textToType: sampleText,
+        charStates: sampleText.split('').map((char) => ({
+          char,
+          status: 'default' as const,
+        })),
+      });
+      console.error('Failed to load words from API:', error);
+    }
+  },
 
   handleKeyPress: (key: string) =>
     set((state) => {
