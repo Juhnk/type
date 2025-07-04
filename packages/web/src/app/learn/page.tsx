@@ -10,13 +10,42 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useAuthStore } from '@/store/useAuthStore';
+import { generateChallenge } from '@/lib/api-client';
 
 export default function LearnPage() {
   const [topic, setTopic] = useState('');
+  const [generatedText, setGeneratedText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { token } = useAuthStore();
 
-  const handleGenerate = () => {
-    // This will be wired up to the API in the next step
-    console.log('Generate clicked with topic:', topic);
+  const handleGenerate = async () => {
+    // Validate input
+    if (!topic.trim()) {
+      toast.error('Please enter a topic to generate text');
+      return;
+    }
+
+    // Check authentication
+    if (!token) {
+      toast.error('Please log in to use AI text generation');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await generateChallenge(topic, token);
+      setGeneratedText(response.text);
+      toast.success('Text generated successfully!');
+    } catch (error) {
+      console.error('Failed to generate text:', error);
+      toast.error('Failed to generate text. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const examplePrompts = [
@@ -41,9 +70,31 @@ export default function LearnPage() {
               onChange={(e) => setTopic(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
             />
-            <Button onClick={handleGenerate} className="w-full">
-              Generate
+            <Button
+              onClick={handleGenerate}
+              disabled={isLoading}
+              className="w-full"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                'Generate'
+              )}
             </Button>
+            {generatedText && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Generated Text:</p>
+                <Textarea
+                  value={generatedText}
+                  readOnly
+                  className="min-h-[200px] resize-none"
+                  placeholder="Your generated text will appear here..."
+                />
+              </div>
+            )}
           </CardContent>
           <CardFooter>
             <div className="w-full">
