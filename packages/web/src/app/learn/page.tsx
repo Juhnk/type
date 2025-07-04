@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -11,69 +10,21 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Play } from 'lucide-react';
-import { toast } from 'sonner';
-import { useGameStore } from '@/store/useGameStore';
 
 export default function LearnPage() {
   const [topic, setTopic] = useState('');
-  const [generatedText, setGeneratedText] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const router = useRouter();
-  const { setTextToType, setTestConfig } = useGameStore();
 
-  const handleGenerate = async () => {
-    if (!topic.trim()) {
-      toast.error('Please enter a topic to generate text.');
-      return;
-    }
-
-    setIsGenerating(true);
-    try {
-      const response = await fetch('/api/ai/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt: topic }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate text');
-      }
-
-      const data = await response.json();
-      setGeneratedText(data.text);
-      toast.success('Text generated successfully!');
-    } catch (error) {
-      console.error('Error generating text:', error);
-      toast.error('Failed to generate text. Please try again.');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handlePracticeText = () => {
-    // Set the game mode to 'quote' for custom text
-    setTestConfig({ mode: 'quote' });
-
-    // Load the AI-generated text into the game store
-    setTextToType(generatedText);
-
-    // Navigate to the main typing interface
-    router.push('/');
-
-    toast.success('Practice session started with your AI-generated text!');
+  const handleGenerate = () => {
+    // This will be wired up to the API in the next step
+    console.log('Generate clicked with topic:', topic);
   };
 
   const examplePrompts = [
-    'Space exploration and the future of humanity',
-    'The history of artificial intelligence',
-    'Climate change and renewable energy solutions',
-    'The art of cooking and culinary traditions',
-    'Modern architecture and urban planning',
+    'the history of space exploration',
+    'common JavaScript array methods',
+    'climate change and renewable energy',
+    'famous quotes from literature',
+    'basic cooking techniques',
   ];
 
   return (
@@ -81,74 +32,27 @@ export default function LearnPage() {
       <div className="mx-auto max-w-2xl">
         <Card>
           <CardHeader>
-            <CardTitle className="text-center">Amplify Your Practice</CardTitle>
+            <CardTitle>Amplify Your Practice</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="topic">Enter your topic or interest:</Label>
-              <Input
-                id="topic"
-                placeholder="e.g., machine learning, cooking, travel..."
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
-              />
-            </div>
-
-            <Button
-              onClick={handleGenerate}
-              disabled={isGenerating}
-              className="w-full"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                'Generate'
-              )}
+          <CardContent className="space-y-4">
+            <Input
+              placeholder="Enter a topic for AI-generated practice text..."
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
+            />
+            <Button onClick={handleGenerate} className="w-full">
+              Generate
             </Button>
-
-            {generatedText && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="generated-text">
-                    Generated Practice Text:
-                  </Label>
-                  <Textarea
-                    id="generated-text"
-                    value={generatedText}
-                    readOnly
-                    className="min-h-[120px] resize-none"
-                    placeholder="Your generated text will appear here..."
-                  />
-                </div>
-                <Button
-                  onClick={handlePracticeText}
-                  className="w-full"
-                  variant="default"
-                >
-                  <Play className="mr-2 h-4 w-4" />
-                  Practice this text
-                </Button>
-              </div>
-            )}
           </CardContent>
           <CardFooter>
             <div className="w-full">
-              <h3 className="mb-2 font-semibold">Example prompts:</h3>
+              <p className="text-muted-foreground mb-2 text-sm">
+                Example prompts:
+              </p>
               <ul className="text-muted-foreground space-y-1 text-sm">
                 {examplePrompts.map((prompt, index) => (
-                  <li key={index} className="flex items-center">
-                    <span className="mr-2">•</span>
-                    <button
-                      onClick={() => setTopic(prompt)}
-                      className="hover:text-foreground text-left transition-colors"
-                    >
-                      {prompt}
-                    </button>
-                  </li>
+                  <li key={index}>• {prompt}</li>
                 ))}
               </ul>
             </div>
