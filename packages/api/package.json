@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc --noEmit"
+    "build": "tsc --noEmit",
+    "generate": "prisma generate"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.56.0",
