@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+coverage/
+.vitest/
 
 # next.js
 /.next/
@@ -19,6 +21,7 @@
 
 # production
 /build
+dist/
 
 # misc
 .DS_Store
@@ -44,3 +47,17 @@ packages/api/node_modules/
 # Docker volumes
 postgres_data/
 .docker/
+
+# Database files
+*.db
+*.db-journal
+prisma/dev.db*
+
+# Development logs
+*.log
+api.log
+dev.log
+
+# Temporary files
+*.tmp
+*.temp
