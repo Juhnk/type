@@ -54,21 +54,24 @@ class ApiClient {
     return data;
   }
 
-  async registerUser(data: AuthRequest): Promise<AuthResponse> {
+  // Use arrow functions to preserve 'this' context when destructured
+  registerUser = async (data: AuthRequest): Promise<AuthResponse> => {
     return this.makeRequest<AuthResponse>('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
     });
-  }
+  };
 
-  async loginUser(data: AuthRequest): Promise<AuthResponse> {
+  loginUser = async (data: AuthRequest): Promise<AuthResponse> => {
     return this.makeRequest<AuthResponse>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify(data),
     });
-  }
+  };
 
-  async syncLocalHistory(token: string): Promise<BulkSyncResponse | null> {
+  syncLocalHistory = async (
+    token: string
+  ): Promise<BulkSyncResponse | null> => {
     const localHistory = getTestHistory();
 
     // If no local history exists, return null
@@ -111,12 +114,12 @@ class ApiClient {
     clearTestHistory();
 
     return response;
-  }
+  };
 
-  async generateChallenge(
+  generateChallenge = async (
     prompt: string,
     token: string
-  ): Promise<GenerateChallengeResponse> {
+  ): Promise<GenerateChallengeResponse> => {
     return this.makeRequest<GenerateChallengeResponse>(
       '/api/generate-challenge',
       {
@@ -127,12 +130,12 @@ class ApiClient {
         body: JSON.stringify({ prompt }),
       }
     );
-  }
+  };
 
-  async saveSingleTest(
+  saveSingleTest = async (
     result: TestResult,
     token: string
-  ): Promise<{ message: string }> {
+  ): Promise<{ message: string }> => {
     // Transform local TestResult format to match API expected format
     const transformedResult = {
       wpm: result.wpm,
@@ -158,12 +161,12 @@ class ApiClient {
       },
       body: JSON.stringify(transformedResult),
     });
-  }
+  };
 }
 
 export const apiClient = new ApiClient();
 
-// Export convenience functions
+// Export convenience functions with proper binding
 export const {
   registerUser,
   loginUser,
