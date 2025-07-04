@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { saveTestResult, type TestResult } from '@/lib/history';
+import { saveSingleTest } from '@/lib/api-client';
+import { useAuthStore } from './useAuthStore';
 
 // Test Configuration Interface
 interface TestConfig {
@@ -214,46 +216,60 @@ export const useGameStore = create<GameState>((set, get) => ({
       };
     }),
 
-  completeGame: () =>
-    set(() => {
-      const now = Date.now();
-      const state = get();
-      const finalStats = {
-        ...state.stats,
-        endTime: now,
-        elapsedTime: now - state.stats.startTime,
-      };
+  completeGame: async () => {
+    const now = Date.now();
+    const state = get();
+    const finalStats = {
+      ...state.stats,
+      endTime: now,
+      elapsedTime: now - state.stats.startTime,
+    };
 
-      // Save test result to localStorage
-      const testResult: TestResult = {
-        id: `test-${now}-${Math.random().toString(36).substr(2, 9)}`,
-        timestamp: now,
-        mode: state.testConfig.mode,
-        duration:
-          state.testConfig.mode === 'time'
-            ? state.testConfig.duration
-            : undefined,
-        wordCount:
-          state.testConfig.mode === 'words'
-            ? state.testConfig.wordCount
-            : undefined,
-        textSource: state.testConfig.textSource,
-        difficulty: state.testConfig.difficulty,
-        punctuation: state.testConfig.punctuation,
-        wpm: finalStats.wpm,
-        accuracy: finalStats.accuracy,
-        totalChars: finalStats.totalChars,
-        correctChars: finalStats.correctChars,
-        incorrectChars: finalStats.incorrectChars,
-      };
+    // Create test result
+    const testResult: TestResult = {
+      id: `test-${now}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: now,
+      mode: state.testConfig.mode,
+      duration:
+        state.testConfig.mode === 'time'
+          ? state.testConfig.duration
+          : undefined,
+      wordCount:
+        state.testConfig.mode === 'words'
+          ? state.testConfig.wordCount
+          : undefined,
+      textSource: state.testConfig.textSource,
+      difficulty: state.testConfig.difficulty,
+      punctuation: state.testConfig.punctuation,
+      wpm: finalStats.wpm,
+      accuracy: finalStats.accuracy,
+      totalChars: finalStats.totalChars,
+      correctChars: finalStats.correctChars,
+      incorrectChars: finalStats.incorrectChars,
+    };
 
+    // Smart saving: check authentication status
+    const { token } = useAuthStore.getState();
+
+    if (token) {
+      // User is authenticated - save to backend
+      try {
+        await saveSingleTest(testResult, token);
+      } catch (error) {
+        console.error('Failed to save test result to backend:', error);
+        // Fallback to localStorage if backend fails
+        saveTestResult(testResult);
+      }
+    } else {
+      // User is anonymous - save to localStorage
       saveTestResult(testResult);
+    }
 
-      return {
-        gameStatus: 'finished',
-        stats: finalStats,
-      };
-    }),
+    set({
+      gameStatus: 'finished',
+      stats: finalStats,
+    });
+  },
 
   updateStats: () =>
     set((state) => {

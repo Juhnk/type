@@ -128,13 +128,49 @@ class ApiClient {
       }
     );
   }
+
+  async saveSingleTest(
+    result: TestResult,
+    token: string
+  ): Promise<{ message: string }> {
+    // Transform local TestResult format to match API expected format
+    const transformedResult = {
+      wpm: result.wpm,
+      accuracy: result.accuracy,
+      rawWpm: result.wpm, // Using wpm as rawWpm for now
+      consistency: null, // Not tracked in local format
+      config: {
+        mode: result.mode,
+        duration: result.duration,
+        wordCount: result.wordCount,
+        textSource: result.textSource,
+        difficulty: result.difficulty,
+        punctuation: result.punctuation,
+      },
+      tags: [], // Not tracked in local format
+      timestamp: new Date(result.timestamp).toISOString(),
+    };
+
+    return this.makeRequest<{ message: string }>('/api/me/tests', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(transformedResult),
+    });
+  }
 }
 
 export const apiClient = new ApiClient();
 
 // Export convenience functions
-export const { registerUser, loginUser, syncLocalHistory, generateChallenge } =
-  apiClient;
+export const {
+  registerUser,
+  loginUser,
+  syncLocalHistory,
+  generateChallenge,
+  saveSingleTest,
+} = apiClient;
 
 // SWR fetcher function for authenticated GET requests
 export async function fetcher(url: string, token: string) {

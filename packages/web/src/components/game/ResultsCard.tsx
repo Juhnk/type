@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { useGameStore } from '@/store/useGameStore';
+import { useAuthStore } from '@/store/useAuthStore';
+import { useModalStore } from '@/store/useModalStore';
 import {
   Card,
   CardContent,
@@ -11,7 +13,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Trophy, Target, Timer, RotateCcw } from 'lucide-react';
+import { Trophy, Target, Timer, RotateCcw, Save, Check } from 'lucide-react';
 
 export function ResultsCard() {
   // Use atomic selectors to prevent infinite loop and optimize performance
@@ -22,6 +24,14 @@ export function ResultsCard() {
   const incorrectChars = useGameStore((state) => state.stats.incorrectChars);
   const elapsedTime = useGameStore((state) => state.stats.elapsedTime);
   const resetGame = useGameStore((state) => state.resetGame);
+
+  // Auth and modal stores
+  const { token } = useAuthStore();
+  const { openAuthModal } = useModalStore();
+
+  const handleSaveScore = () => {
+    openAuthModal();
+  };
 
   // Format elapsed time to seconds
   const elapsedSeconds = Math.round(elapsedTime / 1000);
@@ -112,10 +122,28 @@ export function ResultsCard() {
         </div>
       </CardContent>
 
-      <CardFooter>
+      <CardFooter className="flex gap-3">
+        {/* Contextual save button */}
+        {token ? (
+          <Button size="lg" variant="outline" className="flex-1" disabled>
+            <Check className="mr-2 h-4 w-4 text-green-600" />
+            Saved!
+          </Button>
+        ) : (
+          <Button
+            onClick={handleSaveScore}
+            size="lg"
+            variant="outline"
+            className="flex-1"
+          >
+            <Save className="mr-2 h-4 w-4" />
+            Save Score
+          </Button>
+        )}
+
         <Button
           onClick={resetGame}
-          className="w-full"
+          className="flex-1"
           size="lg"
           variant="default"
         >
