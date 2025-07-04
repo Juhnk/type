@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/card';
 import { HistoryGraph } from '@/components/profile/HistoryGraph';
 import { SummaryCard } from '@/components/profile/SummaryCard';
+import { SignUpAlert } from '@/components/profile/SignUpAlert';
 
 // API test result interface (from backend)
 interface ApiTestResult {
@@ -159,6 +160,9 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto max-w-7xl px-6 py-8">
+      {/* Sign-up alert for anonymous users */}
+      {!token && <SignUpAlert />}
+
       <div className="mb-8">
         <h1 className="mb-2 text-3xl font-bold">Profile</h1>
         <p className="text-muted-foreground">
