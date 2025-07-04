@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import LearnPage from './page';
 
@@ -45,16 +45,16 @@ describe('LearnPage', () => {
     vi.clearAllMocks();
 
     // Setup default mock implementations
-    (useRouter as any).mockReturnValue({
+    (useRouter as ReturnType<typeof vi.fn>).mockReturnValue({
       push: mockPush,
     });
 
-    (useGameStore as any).mockReturnValue({
+    (useGameStore as ReturnType<typeof vi.fn>).mockReturnValue({
       setTextToType: mockSetTextToType,
       setTestConfig: mockSetTestConfig,
     });
 
-    (useAuthStore as any).mockReturnValue({
+    (useAuthStore as ReturnType<typeof vi.fn>).mockReturnValue({
       token: 'mock-auth-token',
     });
   });
@@ -65,7 +65,7 @@ describe('LearnPage', () => {
       'This is a sample AI-generated text about space exploration.';
 
     // Mock successful API response
-    (generateChallenge as any).mockResolvedValue({
+    (generateChallenge as ReturnType<typeof vi.fn>).mockResolvedValue({
       text: mockGeneratedText,
       metadata: {
         source: 'ai',
@@ -137,7 +137,7 @@ describe('LearnPage', () => {
     const user = userEvent.setup();
 
     // Mock no auth token
-    (useAuthStore as any).mockReturnValue({
+    (useAuthStore as ReturnType<typeof vi.fn>).mockReturnValue({
       token: null,
     });
 
@@ -184,7 +184,7 @@ describe('LearnPage', () => {
     const user = userEvent.setup();
 
     // Mock API error
-    (generateChallenge as any).mockRejectedValue(
+    (generateChallenge as ReturnType<typeof vi.fn>).mockRejectedValue(
       new Error('Failed to generate text')
     );
 
