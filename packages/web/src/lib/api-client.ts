@@ -21,6 +21,15 @@ interface BulkSyncResponse {
   message: string;
 }
 
+interface GenerateChallengeResponse {
+  text: string;
+  metadata: {
+    source: string;
+    difficulty: string;
+    context: string;
+  };
+}
+
 class ApiClient {
   private async makeRequest<T>(
     endpoint: string,
@@ -103,12 +112,29 @@ class ApiClient {
 
     return response;
   }
+
+  async generateChallenge(
+    prompt: string,
+    token: string
+  ): Promise<GenerateChallengeResponse> {
+    return this.makeRequest<GenerateChallengeResponse>(
+      '/api/generate-challenge',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ prompt }),
+      }
+    );
+  }
 }
 
 export const apiClient = new ApiClient();
 
 // Export convenience functions
-export const { registerUser, loginUser, syncLocalHistory } = apiClient;
+export const { registerUser, loginUser, syncLocalHistory, generateChallenge } =
+  apiClient;
 
 // SWR fetcher function for authenticated GET requests
 export async function fetcher(url: string, token: string) {
