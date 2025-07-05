@@ -13,7 +13,15 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Trophy, Target, Timer, RotateCcw, Save, Check } from 'lucide-react';
+import {
+  Trophy,
+  Target,
+  Timer,
+  RotateCcw,
+  Save,
+  Check,
+  AlertTriangle,
+} from 'lucide-react';
 
 export function ResultsCard() {
   // Use atomic selectors to prevent infinite loop and optimize performance
@@ -24,6 +32,9 @@ export function ResultsCard() {
   const incorrectChars = useGameStore((state) => state.stats.incorrectChars);
   const elapsedTime = useGameStore((state) => state.stats.elapsedTime);
   const resetGame = useGameStore((state) => state.resetGame);
+  const testFailed = useGameStore((state) => state.testFailed);
+  const failureReason = useGameStore((state) => state.failureReason);
+  const testConfig = useGameStore((state) => state.testConfig);
 
   // Auth and modal stores
   const { token } = useAuthStore();
@@ -38,6 +49,9 @@ export function ResultsCard() {
 
   // Determine performance level for congratulations message
   const getPerformanceMessage = () => {
+    if (testFailed) {
+      return `Test Failed in ${testConfig.difficulty} Mode`;
+    }
     if (wpm >= 80) return 'Outstanding Performance! 🚀';
     if (wpm >= 60) return 'Excellent Typing! 🌟';
     if (wpm >= 40) return 'Great Job! 👏';
@@ -54,12 +68,23 @@ export function ResultsCard() {
     <Card className="mx-auto w-full max-w-2xl">
       <CardHeader className="text-center">
         <CardTitle className="flex items-center justify-center gap-2 text-2xl font-bold">
-          <Trophy className="h-6 w-6 text-yellow-500" />
-          Test Complete!
+          {testFailed ? (
+            <AlertTriangle className="h-6 w-6 text-red-500" />
+          ) : (
+            <Trophy className="h-6 w-6 text-yellow-500" />
+          )}
+          {testFailed ? 'Test Failed!' : 'Test Complete!'}
         </CardTitle>
         <CardDescription className="text-lg">
           {getPerformanceMessage()}
         </CardDescription>
+        {testFailed && failureReason && (
+          <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
+            <p className="text-sm font-medium text-red-700 dark:text-red-300">
+              {failureReason}
+            </p>
+          </div>
+        )}
       </CardHeader>
 
       <CardContent className="space-y-6">
