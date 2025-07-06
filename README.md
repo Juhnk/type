@@ -61,8 +61,10 @@ typeamp/
 - **CI/CD**: GitHub Actions
 - **Code Quality**: ESLint, Prettier, TypeScript
 - **Security**: CodeQL, Dependabot, Snyk
-- **Deployment**: Vercel (Frontend) + Railway (Backend)
-- **Monitoring**: Built-in health checks and logging
+- **Deployment**: Vercel (Full-stack hosting with serverless functions)
+- **Database**: Supabase (Managed PostgreSQL)
+- **Monitoring**: Sentry, Vercel Analytics, Better Uptime
+- **CDN**: Vercel Edge Network (Global)
 
 ## 🚀 Quick Start
 

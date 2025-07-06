@@ -60,7 +60,7 @@ test.describe('TypeAmp E2E Tests', () => {
     await expect(typingArea).toHaveAttribute('aria-describedby');
 
     // Check for screen reader instructions
-    await expect(page.locator('#typing-instructions')).toBeInTheDOM();
+    await expect(page.locator('#typing-instructions')).toBeVisible();
   });
 
   test('different test modes work', async ({ page }) => {

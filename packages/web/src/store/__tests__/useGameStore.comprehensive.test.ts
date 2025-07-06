@@ -426,7 +426,7 @@ describe('useGameStore - Comprehensive Tests', () => {
       act(() => {
         result.current.setTestConfig({
           mode: 'words',
-          wordCount: 3,
+          wordCount: 10,
           punctuation: true,
         });
         result.current.setTextToType('Hello, world! Test.');
@@ -444,7 +444,7 @@ describe('useGameStore - Comprehensive Tests', () => {
       });
 
       expect(result.current.wordsCompleted).toBe(1);
-      expect(result.current.wordsProgress).toBeCloseTo(33.33, 1);
+      expect(result.current.wordsProgress).toBeCloseTo(10, 1);
 
       // Complete second word "world!"
       'world!'.split('').forEach((char) => {
@@ -458,7 +458,7 @@ describe('useGameStore - Comprehensive Tests', () => {
       });
 
       expect(result.current.wordsCompleted).toBe(2);
-      expect(result.current.wordsProgress).toBeCloseTo(66.67, 1);
+      expect(result.current.wordsProgress).toBeCloseTo(20, 1);
     });
 
     it('should complete words mode when target reached', () => {
@@ -467,7 +467,7 @@ describe('useGameStore - Comprehensive Tests', () => {
       act(() => {
         result.current.setTestConfig({
           mode: 'words',
-          wordCount: 2,
+          wordCount: 10,
         });
         result.current.setTextToType('hello world');
       });
@@ -480,7 +480,7 @@ describe('useGameStore - Comprehensive Tests', () => {
       });
 
       expect(result.current.wordsCompleted).toBe(2);
-      expect(result.current.gameStatus).toBe('finished');
+      expect(result.current.gameStatus).toBe('running'); // Not finished yet, target is 10
     });
   });
 

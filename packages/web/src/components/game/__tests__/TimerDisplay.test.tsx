@@ -1,7 +1,7 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { TimerDisplay, CompactTimerDisplay } from '../TimerDisplay';
 import { useGameStore } from '@/store/useGameStore';
-import { vi } from 'vitest';
 
 // Mock the game store
 vi.mock('@/store/useGameStore');

@@ -107,8 +107,8 @@ describe('Timer Performance', () => {
         updateTimes.push(Date.now());
         callback();
       }, interval);
-      return mockInterval;
-    });
+      return mockInterval as unknown as number;
+    }) as any;
 
     startTimer();
 

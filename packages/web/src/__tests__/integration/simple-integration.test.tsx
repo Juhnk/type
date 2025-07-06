@@ -74,8 +74,6 @@ describe('Simplified Integration Tests', () => {
     useAuthStore.setState({
       user: null,
       token: null,
-      isLoading: false,
-      error: null,
     });
 
     // Setup default API response
@@ -173,7 +171,7 @@ describe('Simplified Integration Tests', () => {
       vi.clearAllMocks();
 
       // Test words mode
-      store.setTestConfig({ mode: 'words', wordCount: 30 });
+      store.setTestConfig({ mode: 'words', wordCount: 25 });
       await store.prepareGame();
 
       expect(mockGetWords).toHaveBeenCalledWith(
@@ -388,14 +386,14 @@ describe('Simplified Integration Tests', () => {
     it('should handle authentication state changes', () => {
       const authStore = useAuthStore.getState();
 
-      authStore.login({
-        user: {
+      authStore.login(
+        {
           id: '1',
           email: 'test@example.com',
           createdAt: new Date().toISOString(),
         },
-        token: 'test-jwt-token',
-      });
+        'test-jwt-token'
+      );
 
       const currentState = useAuthStore.getState();
       expect(currentState.token).toBe('test-jwt-token');
@@ -407,14 +405,14 @@ describe('Simplified Integration Tests', () => {
       const authStore = useAuthStore.getState();
 
       // First login
-      authStore.login({
-        user: {
+      authStore.login(
+        {
           id: '1',
           email: 'test@example.com',
           createdAt: new Date().toISOString(),
         },
-        token: 'test-jwt-token',
-      });
+        'test-jwt-token'
+      );
 
       // Then logout
       authStore.logout();

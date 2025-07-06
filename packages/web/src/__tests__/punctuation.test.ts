@@ -210,7 +210,7 @@ describe('Sprint 8: Punctuation & Numbers Enhancement', () => {
       const config: TestConfig = {
         mode: 'words',
         duration: 60,
-        wordCount: 1,
+        wordCount: 10,
         difficulty: 'Normal',
         textSource: 'english1k',
         punctuation: true,

@@ -185,18 +185,18 @@ describe('Performance and Edge Case Tests', () => {
       for (let i = 0; i < 1000; i++) {
         gameStore.setTestConfig({
           duration: 60 + (i % 60),
-          wordCount: 50 + (i % 50),
+          wordCount: [10, 25, 50, 100][i % 4] as 10 | 25 | 50 | 100,
         });
 
         if (i % 2 === 0) {
-          authStore.login({
-            user: {
+          authStore.login(
+            {
               id: i.toString(),
               email: `user${i}@test.com`,
               createdAt: new Date().toISOString(),
             },
-            token: `token-${i}`,
-          });
+            `token-${i}`
+          );
         } else {
           authStore.logout();
         }
@@ -219,7 +219,7 @@ describe('Performance and Edge Case Tests', () => {
       expect(store.testConfig.duration).toBe(Number.MAX_SAFE_INTEGER);
 
       // Test with extreme word counts
-      store.setTestConfig({ wordCount: Number.MAX_SAFE_INTEGER });
+      store.setTestConfig({ wordCount: Number.MAX_SAFE_INTEGER as any });
 
       expect(store.testConfig.wordCount).toBe(Number.MAX_SAFE_INTEGER);
     });
@@ -229,7 +229,7 @@ describe('Performance and Edge Case Tests', () => {
 
       // Test negative values
       store.setTestConfig({ duration: -100 });
-      store.setTestConfig({ wordCount: -50 });
+      store.setTestConfig({ wordCount: -50 as any });
 
       // Should handle gracefully without crashing
       expect(store.testConfig.duration).toBe(-100);
@@ -241,14 +241,14 @@ describe('Performance and Edge Case Tests', () => {
 
       // Test NaN values
       store.setTestConfig({ duration: NaN });
-      store.setTestConfig({ wordCount: NaN });
+      store.setTestConfig({ wordCount: NaN as any });
 
       expect(Number.isNaN(store.testConfig.duration)).toBe(true);
       expect(Number.isNaN(store.testConfig.wordCount)).toBe(true);
 
       // Test Infinity values
       store.setTestConfig({ duration: Infinity });
-      store.setTestConfig({ wordCount: -Infinity });
+      store.setTestConfig({ wordCount: -Infinity as any });
 
       expect(store.testConfig.duration).toBe(Infinity);
       expect(store.testConfig.wordCount).toBe(-Infinity);
@@ -511,7 +511,7 @@ describe('Performance and Edge Case Tests', () => {
       // Rapidly change configurations
       for (let i = 0; i < 1000; i++) {
         const config = configurations[i % configurations.length];
-        store.setTestConfig(config);
+        store.setTestConfig(config as any);
       }
 
       const endTime = performance.now();
