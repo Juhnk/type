@@ -94,7 +94,10 @@ jobs:
         run: npm run generate --workspace=@typeamp/api
 
       - name: Setup test database
-        run: npm run db:push --workspace=@typeamp/api
+        run: |
+          echo "Setting up test database..."
+          npm run generate --workspace=@typeamp/api
+          npm run db:push --workspace=@typeamp/api
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/typeamp_test
 
