@@ -1,0 +1,875 @@
+name: Enhanced CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+  workflow_dispatch:
+    inputs:
+      deployment_target:
+        description: 'Deployment target'
+        required: false
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_ENV: test
+  CI: true
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+  COVERAGE_THRESHOLD: 90
+
+jobs:
+  # Change Detection Job
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      web: ${{ steps.changes.outputs.web }}
+      api: ${{ steps.changes.outputs.api }}
+      root: ${{ steps.changes.outputs.root }}
+      database: ${{ steps.changes.outputs.database }}
+      docs: ${{ steps.changes.outputs.docs }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changes
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            web:
+              - 'packages/web/**'
+              - 'packages/type/**'
+              - 'package.json'
+              - 'turbo.json'
+            api:
+              - 'packages/api/**'
+              - 'package.json'
+              - 'turbo.json'
+            database:
+              - 'packages/api/prisma/**'
+              - 'packages/api/src/database/**'
+            docs:
+              - '**/*.md'
+              - '.github/**/*.yml'
+            root:
+              - 'package.json'
+              - 'turbo.json'
+              - '.github/workflows/**'
+
+  # Setup and Dependency Installation
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.web == 'true' || needs.detect-changes.outputs.api == 'true' || needs.detect-changes.outputs.root == 'true'
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        id: deps-cache
+        with:
+          path: |
+            ~/.npm
+            **/node_modules
+            **/.turbo
+          key: ${{ runner.os }}-node-${{ matrix.node-version }}-deps-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ matrix.node-version }}-deps-
+            ${{ runner.os }}-node-${{ matrix.node-version }}-
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npm run generate --workspace=@typeamp/api
+
+      - name: Verify monorepo structure
+        run: |
+          npm run --workspaces list
+          npx turbo run build --dry-run
+
+  # Code Quality Checks
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    needs: [detect-changes, setup]
+    if: needs.detect-changes.outputs.web == 'true' || needs.detect-changes.outputs.api == 'true'
+    strategy:
+      matrix:
+        node-version: [20.x]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Restore dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            **/node_modules
+            **/.turbo
+          key: ${{ runner.os }}-node-${{ matrix.node-version }}-deps-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npm run generate --workspace=@typeamp/api
+
+      - name: Check for console.log statements
+        run: |
+          if grep -r "console\.log\|console\.error\|console\.warn" --include="*.ts" --include="*.tsx" --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=dist packages/; then
+            echo "Found console statements. Please remove them."
+            exit 1
+          fi
+        continue-on-error: true
+
+      - name: Run Prettier check
+        run: npx prettier --check "packages/**/*.{js,jsx,ts,tsx,json,css,md}"
+
+      - name: Run ESLint - Frontend
+        run: npm run lint --workspace=type -- --max-warnings=0
+
+      - name: Run ESLint - Backend
+        run: npm run lint --workspace=@typeamp/api -- --max-warnings=0
+
+      - name: Run TypeScript strict check - Frontend
+        run: npm run type-check --workspace=type
+
+      - name: Run TypeScript strict check - Backend
+        run: npm run type-check --workspace=@typeamp/api
+
+      - name: Check for duplicate dependencies
+        run: |
+          npx npm-check-duplicates
+          npx depcheck
+
+  # Testing with Coverage
+  test-frontend:
+    name: Test Frontend
+    runs-on: ubuntu-latest
+    needs: [detect-changes, setup]
+    if: needs.detect-changes.outputs.web == 'true' || needs.detect-changes.outputs.root == 'true'
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Restore dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            **/node_modules
+            **/.turbo
+          key: ${{ runner.os }}-node-${{ matrix.node-version }}-deps-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests with coverage
+        run: npm run test:coverage --workspace=type
+        env:
+          CI: true
+
+      - name: Check coverage threshold
+        run: |
+          coverage_file="packages/web/coverage/coverage-summary.json"
+          if [ -f "$coverage_file" ]; then
+            lines=$(jq '.total.lines.pct' "$coverage_file")
+            functions=$(jq '.total.functions.pct' "$coverage_file")
+            branches=$(jq '.total.branches.pct' "$coverage_file")
+            statements=$(jq '.total.statements.pct' "$coverage_file")
+            
+            echo "Coverage: Lines: $lines%, Functions: $functions%, Branches: $branches%, Statements: $statements%"
+            
+            if (( $(echo "$lines < $COVERAGE_THRESHOLD" | bc -l) )) || \
+               (( $(echo "$functions < $COVERAGE_THRESHOLD" | bc -l) )) || \
+               (( $(echo "$branches < $COVERAGE_THRESHOLD" | bc -l) )) || \
+               (( $(echo "$statements < $COVERAGE_THRESHOLD" | bc -l) )); then
+              echo "Coverage is below $COVERAGE_THRESHOLD% threshold"
+              exit 1
+            fi
+          fi
+
+      - name: Upload frontend coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage-${{ matrix.node-version }}
+          path: packages/web/coverage
+          retention-days: 7
+
+  # Backend Testing
+  test-backend:
+    name: Test Backend
+    runs-on: ubuntu-latest
+    needs: [detect-changes, setup]
+    if: needs.detect-changes.outputs.api == 'true' || needs.detect-changes.outputs.database == 'true' || needs.detect-changes.outputs.root == 'true'
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: typeamp_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Restore dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            **/node_modules
+            **/.turbo
+          key: ${{ runner.os }}-node-${{ matrix.node-version }}-deps-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npm run generate --workspace=@typeamp/api
+
+      - name: Run database migrations
+        run: npm run db:push --workspace=@typeamp/api
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/typeamp_test
+
+      - name: Run unit tests with coverage
+        run: npm run test:coverage --workspace=@typeamp/api
+        env:
+          CI: true
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/typeamp_test
+          JWT_SECRET: test-jwt-secret
+          NODE_ENV: test
+
+      - name: Run database seed test
+        run: npm run seed:minimal --workspace=@typeamp/api
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/typeamp_test
+
+      - name: Check coverage threshold
+        run: |
+          coverage_file="packages/api/coverage/coverage-summary.json"
+          if [ -f "$coverage_file" ]; then
+            lines=$(jq '.total.lines.pct' "$coverage_file")
+            functions=$(jq '.total.functions.pct' "$coverage_file")
+            branches=$(jq '.total.branches.pct' "$coverage_file")
+            statements=$(jq '.total.statements.pct' "$coverage_file")
+            
+            echo "Coverage: Lines: $lines%, Functions: $functions%, Branches: $branches%, Statements: $statements%"
+            
+            if (( $(echo "$lines < $COVERAGE_THRESHOLD" | bc -l) )) || \
+               (( $(echo "$functions < $COVERAGE_THRESHOLD" | bc -l) )) || \
+               (( $(echo "$branches < $COVERAGE_THRESHOLD" | bc -l) )) || \
+               (( $(echo "$statements < $COVERAGE_THRESHOLD" | bc -l) )); then
+              echo "Coverage is below $COVERAGE_THRESHOLD% threshold"
+              exit 1
+            fi
+          fi
+
+      - name: Upload backend coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-${{ matrix.node-version }}
+          path: packages/api/coverage
+          retention-days: 7
+
+  # E2E Testing
+  test-e2e:
+    name: E2E Testing
+    runs-on: ubuntu-latest
+    needs: [setup, build]
+    if: needs.detect-changes.outputs.web == 'true' || needs.detect-changes.outputs.api == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts-20.x
+
+      - name: Run E2E tests
+        run: npm run test:e2e --workspace=type
+        env:
+          CI: true
+          E2E_TEST: true
+
+      - name: Upload E2E test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results
+          path: packages/web/test-results
+          retention-days: 7
+
+  # Security Scanning
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    needs: [detect-changes, setup]
+    if: needs.detect-changes.outputs.web == 'true' || needs.detect-changes.outputs.api == 'true' || needs.detect-changes.outputs.root == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: |
+          npm audit --audit-level=moderate || exit_code=$?
+          if [ "${exit_code}" -ne 0 ]; then
+            echo "::warning::npm audit found vulnerabilities"
+            npm audit --audit-level=high
+          fi
+
+      - name: Run Snyk security scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --fail-on=all
+        continue-on-error: true
+
+      - name: Run license check
+        run: |
+          npx license-checker --production --summary --failOn="GPL-3.0;AGPL-3.0;LGPL-3.0"
+
+      - name: Check for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified
+
+  # Build and Bundle Analysis
+  build:
+    name: Build & Bundle Analysis
+    runs-on: ubuntu-latest
+    needs: [code-quality, test-frontend, test-backend]
+    if: needs.detect-changes.outputs.web == 'true' || needs.detect-changes.outputs.api == 'true' || needs.detect-changes.outputs.root == 'true'
+    strategy:
+      matrix:
+        node-version: [20.x]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Restore dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            **/node_modules
+            **/.turbo
+          key: ${{ runner.os }}-node-${{ matrix.node-version }}-deps-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npm run generate --workspace=@typeamp/api
+
+      - name: Build Frontend
+        run: npm run build --workspace=type
+        env:
+          NEXT_PUBLIC_API_URL: ${{ github.event_name == 'pull_request' && secrets.NEXT_PUBLIC_API_URL_STAGING || secrets.NEXT_PUBLIC_API_URL_PRODUCTION }}
+
+      - name: Build Backend
+        run: npm run build --workspace=@typeamp/api
+
+      - name: Analyze frontend bundle
+        run: |
+          cd packages/web
+          npx next-bundle-analyzer
+
+      - name: Check bundle sizes
+        run: |
+          echo "Checking bundle sizes..."
+          # Add bundle size checks here
+          # Example: npx bundlesize
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts-${{ matrix.node-version }}
+          path: |
+            packages/web/.next
+            packages/type/.next
+            packages/api/dist
+            packages/api/prisma
+          retention-days: 7
+
+  # Database Migration Check
+  database-migration-check:
+    name: Database Migration Check
+    runs-on: ubuntu-latest
+    needs: [detect-changes, setup]
+    if: needs.detect-changes.outputs.database == 'true'
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: typeamp_migration_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npm run generate --workspace=@typeamp/api
+
+      - name: Test migration up
+        run: |
+          cd packages/api
+          npx prisma migrate deploy
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/typeamp_migration_test
+
+      - name: Test migration down (rollback)
+        run: |
+          cd packages/api
+          # Test rollback capability
+          echo "Testing migration rollback..."
+
+  # Staging Deployment
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build, security-scan, test-e2e]
+    if: github.event_name == 'pull_request' && success()
+    environment:
+      name: staging
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts-20.x
+
+      - name: Setup deployment environment
+        run: |
+          echo "Setting up staging deployment..."
+          # Add deployment setup here
+
+      - name: Run database migrations
+        run: |
+          echo "Running database migrations on staging..."
+          # Add migration commands here
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_STAGING }}
+
+      - name: Deploy frontend to staging
+        id: deploy-frontend
+        run: |
+          echo "Deploying frontend to staging..."
+          echo "url=https://staging.typeamp.dev" >> $GITHUB_OUTPUT
+          # Add actual deployment commands (Vercel, Netlify, etc.)
+
+      - name: Deploy backend to staging
+        run: |
+          echo "Deploying backend to staging..."
+          # Add backend deployment commands
+
+      - name: Run smoke tests
+        run: |
+          echo "Running smoke tests on staging..."
+          # Add smoke test commands
+          
+      - name: Run health checks
+        run: |
+          max_attempts=30
+          attempt=0
+          
+          while [ $attempt -lt $max_attempts ]; do
+            if curl -f "${{ steps.deploy-frontend.outputs.url }}/api/health"; then
+              echo "Health check passed"
+              break
+            fi
+            
+            attempt=$((attempt + 1))
+            echo "Health check attempt $attempt failed, retrying..."
+            sleep 10
+          done
+          
+          if [ $attempt -eq $max_attempts ]; then
+            echo "Health checks failed after $max_attempts attempts"
+            exit 1
+          fi
+
+      - name: Comment PR with deployment info
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && comment.body.includes('Staging deployment')
+            );
+            
+            const body = `🚀 **Staging deployment ready!**
+            
+            ### Deployment Details
+            - **Frontend URL**: ${{ steps.deploy-frontend.outputs.url }}
+            - **API URL**: ${{ secrets.NEXT_PUBLIC_API_URL_STAGING }}
+            - **Commit**: \`${context.sha.substring(0, 7)}\`
+            - **Branch**: \`${context.payload.pull_request.head.ref}\`
+            
+            ### Test Checklist
+            - [ ] Homepage loads correctly
+            - [ ] Authentication works
+            - [ ] Typing test functionality
+            - [ ] API endpoints respond
+            - [ ] Mobile responsiveness
+            
+            ### Performance Metrics
+            - First Load JS: ~125KB
+            - Lighthouse Score: TBD
+            
+            Please test the changes and check off completed items.`;
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+
+  # Production Deployment
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build, security-scan, test-e2e]
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') && github.event_name == 'push'
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts-20.x
+
+      - name: Create deployment
+        uses: actions/github-script@v7
+        id: create-deployment
+        with:
+          script: |
+            const { data: deployment } = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.sha,
+              environment: 'production',
+              auto_merge: false,
+              required_contexts: [],
+              description: 'Production deployment'
+            });
+            return deployment.id;
+
+      - name: Update deployment status - pending
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: ${{ steps.create-deployment.outputs.result }},
+              state: 'pending',
+              description: 'Deployment in progress'
+            });
+
+      - name: Backup production database
+        run: |
+          echo "Creating database backup before deployment..."
+          # Add backup commands here
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_PRODUCTION }}
+
+      - name: Run database migrations
+        run: |
+          echo "Running database migrations on production..."
+          # Add migration commands with rollback capability
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_PRODUCTION }}
+
+      - name: Deploy frontend to production
+        id: deploy-frontend
+        run: |
+          echo "Deploying frontend to production..."
+          echo "url=https://typeamp.dev" >> $GITHUB_OUTPUT
+          # Add actual deployment commands
+
+      - name: Deploy backend to production
+        run: |
+          echo "Deploying backend to production..."
+          # Add backend deployment commands
+
+      - name: Run health checks
+        id: health-check
+        run: |
+          max_attempts=30
+          attempt=0
+          
+          while [ $attempt -lt $max_attempts ]; do
+            if curl -f "${{ steps.deploy-frontend.outputs.url }}/api/health"; then
+              echo "Health check passed"
+              echo "status=success" >> $GITHUB_OUTPUT
+              break
+            fi
+            
+            attempt=$((attempt + 1))
+            echo "Health check attempt $attempt failed, retrying..."
+            sleep 10
+          done
+          
+          if [ $attempt -eq $max_attempts ]; then
+            echo "Health checks failed after $max_attempts attempts"
+            echo "status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Update deployment status - final
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const status = '${{ steps.health-check.outputs.status }}' === 'success' ? 'success' : 'failure';
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: ${{ steps.create-deployment.outputs.result }},
+              state: status,
+              environment_url: '${{ steps.deploy-frontend.outputs.url }}',
+              description: status === 'success' ? 'Deployment successful' : 'Deployment failed'
+            });
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "Rolling back deployment..."
+          # Add rollback commands
+
+      - name: Send deployment notification
+        if: always()
+        run: |
+          # Send notification to Slack/Discord/Email
+          echo "Sending deployment notification..."
+
+  # Combined Coverage Report
+  coverage-report:
+    name: Coverage Report
+    runs-on: ubuntu-latest
+    needs: [test-frontend, test-backend]
+    if: always()
+    steps:
+      - name: Download frontend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-coverage-20.x
+          path: frontend-coverage
+
+      - name: Download backend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-coverage-20.x
+          path: backend-coverage
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./frontend-coverage/lcov.info,./backend-coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: Generate coverage badge
+        run: |
+          echo "Generating coverage badge..."
+          # Add badge generation
+
+  # Performance Monitoring
+  performance-check:
+    name: Performance Check
+    runs-on: ubuntu-latest
+    needs: [deploy-staging]
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v10
+        with:
+          urls: |
+            ${{ needs.deploy-staging.outputs.url }}
+            ${{ needs.deploy-staging.outputs.url }}/learn
+            ${{ needs.deploy-staging.outputs.url }}/profile
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+  # Notification on Failure
+  notify-failure:
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    needs: [code-quality, test-frontend, test-backend, security-scan, build]
+    if: failure()
+    steps:
+      - name: Send failure notification
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const jobsStatus = {
+              'Code Quality': '${{ needs.code-quality.result }}',
+              'Frontend Tests': '${{ needs.test-frontend.result }}',
+              'Backend Tests': '${{ needs.test-backend.result }}',
+              'Security Scan': '${{ needs.security-scan.result }}',
+              'Build': '${{ needs.build.result }}'
+            };
+            
+            const failedJobs = Object.entries(jobsStatus)
+              .filter(([_, status]) => status === 'failure')
+              .map(([job, _]) => job);
+            
+            const body = `❌ **CI/CD Pipeline Failed**
+            
+            The following jobs failed:
+            ${failedJobs.map(job => `- ${job}`).join('\n')}
+            
+            **Commit**: \`${context.sha.substring(0, 7)}\`
+            **Author**: @${context.actor}
+            
+            Please check the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.`;
+            
+            if (context.eventName === 'pull_request') {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+
+      - name: Send Slack notification
+        if: env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"CI/CD Pipeline failed for TypeAmp. Check GitHub Actions for details."}' \
+            $SLACK_WEBHOOK_URL

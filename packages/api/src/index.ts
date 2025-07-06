@@ -25,7 +25,7 @@ const start = async () => {
         },
         servers: [
           {
-            url: 'http://localhost:3003',
+            url: 'http://localhost:8080',
             description: 'Development server'
           },
           {
@@ -78,12 +78,16 @@ const start = async () => {
     await fastify.register(aiRoutes);
     await fastify.register(wordsRoutes);
 
-    // Health check route
+    // Health check routes
     fastify.get('/', async (request, reply) => {
       return { status: 'ok' };
     });
+    
+    fastify.get('/health', async (request, reply) => {
+      return { status: 'ok' };
+    });
 
-    const port = process.env.PORT ? parseInt(process.env.PORT) : 3003;
+    const port = process.env.API_PORT ? parseInt(process.env.API_PORT) : 8080;
     await fastify.listen({ port, host: '0.0.0.0' });
     console.log(`Server listening on http://localhost:${port}`);
   } catch (err) {

@@ -15,6 +15,9 @@ interface WordsQuery {
   list?: string;
   limit?: string;
   randomize?: string;
+  punctuation?: string;
+  numbers?: string;
+  punctuation_density?: string;
 }
 
 // Schema for the words endpoint
@@ -35,6 +38,21 @@ const wordsQuerySchema = {
       type: 'string', 
       enum: ['true', 'false'],
       description: 'Whether to randomize word order (default: true)'
+    },
+    punctuation: {
+      type: 'string',
+      enum: ['true', 'false'],
+      description: 'Generate enhanced text with punctuation (default: false)'
+    },
+    numbers: {
+      type: 'string',
+      enum: ['true', 'false'],
+      description: 'Include numbers in enhanced text generation (default: false)'
+    },
+    punctuation_density: {
+      type: 'string',
+      enum: ['light', 'medium', 'heavy'],
+      description: 'Density of punctuation in enhanced text (default: medium)'
     }
   },
   additionalProperties: false
@@ -66,6 +84,18 @@ const wordsResponseSchema = {
           }
         },
         required: ['list', 'count', 'total_available']
+      },
+      enhanced_text: {
+        type: 'string',
+        description: 'Generated text with punctuation and/or numbers when requested'
+      },
+      punctuation_enabled: {
+        type: 'boolean',
+        description: 'Whether punctuation enhancement was applied'
+      },
+      numbers_enabled: {
+        type: 'boolean',
+        description: 'Whether number insertion was applied'
       }
     },
     required: ['words', 'metadata']
@@ -104,7 +134,14 @@ export async function wordsRoutes(fastify: FastifyInstance) {
     },
     async (request: FastifyRequest<{ Querystring: WordsQuery }>, reply: FastifyReply) => {
       try {
-        const { list = 'english1k', limit: limitStr, randomize: randomizeStr } = request.query;
+        const { 
+          list = 'english1k', 
+          limit: limitStr, 
+          randomize: randomizeStr,
+          punctuation: punctuationStr,
+          numbers: numbersStr,
+          punctuation_density = 'medium'
+        } = request.query;
         
         // Validate word list type
         if (!isValidWordListType(list)) {
@@ -127,18 +164,38 @@ export async function wordsRoutes(fastify: FastifyInstance) {
           return reply.status(400).send(errorResponse);
         }
         
-        // Parse randomize parameter (default: true)
+        // Parse boolean parameters
         const randomize = randomizeStr !== 'false';
+        const punctuation = punctuationStr === 'true';
+        const numbers = numbersStr === 'true';
         
-        // Get words
-        const wordsResponse: WordsResponse = getWords(list, limit, randomize);
+        // Validate punctuation density
+        const validDensities = ['light', 'medium', 'heavy'];
+        if (punctuation_density && !validDensities.includes(punctuation_density)) {
+          const errorResponse: WordsError = {
+            error: `Invalid punctuation_density: ${punctuation_density}. Valid options: ${validDensities.join(', ')}`,
+            available_lists: Object.keys(AVAILABLE_WORD_LISTS) as WordListType[]
+          };
+          return reply.status(400).send(errorResponse);
+        }
+        
+        // Get words with enhancement options
+        const wordsResponse: WordsResponse = getWords(list, limit, randomize, {
+          punctuation,
+          numbers,
+          punctuationDensity: punctuation_density as 'light' | 'medium' | 'heavy'
+        });
         
         // Log successful request
         fastify.log.info({
           list,
           limit,
           randomize,
-          returned_count: wordsResponse.words.length
+          punctuation,
+          numbers,
+          punctuation_density,
+          returned_count: wordsResponse.words.length,
+          enhanced: !!(punctuation || numbers)
         }, 'Words API request processed successfully');
         
         return reply.status(200).send(wordsResponse);

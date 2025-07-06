@@ -1,6 +1,8 @@
 {
-  "/_not-found/page": "/_not-found",
+  "/api/health/route": "/api/health",
   "/favicon.ico/route": "/favicon.ico",
+  "/_not-found/page": "/_not-found",
+  "/dev-status/page": "/dev-status",
   "/learn/page": "/learn",
   "/page": "/",
   "/profile/page": "/profile"

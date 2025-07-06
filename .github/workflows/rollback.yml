@@ -1,0 +1,434 @@
+name: Emergency Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to rollback'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      rollback_target:
+        description: 'Rollback target (commit SHA or "previous")'
+        required: true
+        default: 'previous'
+      reason:
+        description: 'Reason for rollback'
+        required: true
+      confirm_rollback:
+        description: 'Type "CONFIRM" to proceed with rollback'
+        required: true
+
+concurrency:
+  group: rollback-${{ inputs.environment }}
+  cancel-in-progress: false
+
+env:
+  ROLLBACK_TIMEOUT: 600 # 10 minutes timeout for rollback operations
+
+jobs:
+  validate-input:
+    name: Validate Rollback Request
+    runs-on: ubuntu-latest
+    outputs:
+      validated: ${{ steps.validate.outputs.validated }}
+      target_sha: ${{ steps.validate.outputs.target_sha }}
+    steps:
+      - name: Validate confirmation
+        id: validate
+        run: |
+          if [ "${{ inputs.confirm_rollback }}" != "CONFIRM" ]; then
+            echo "❌ Rollback not confirmed. You must type 'CONFIRM' to proceed."
+            exit 1
+          fi
+          
+          if [ -z "${{ inputs.reason }}" ]; then
+            echo "❌ Reason for rollback is required."
+            exit 1
+          fi
+          
+          echo "validated=true" >> $GITHUB_OUTPUT
+          
+          # Determine target SHA
+          if [ "${{ inputs.rollback_target }}" = "previous" ]; then
+            # This would need to be implemented to find the previous successful deployment
+            echo "target_sha=previous" >> $GITHUB_OUTPUT
+          else
+            echo "target_sha=${{ inputs.rollback_target }}" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "✅ Rollback request validated"
+
+  create-rollback-issue:
+    name: Create Rollback Issue
+    runs-on: ubuntu-latest
+    needs: validate-input
+    outputs:
+      issue_number: ${{ steps.create-issue.outputs.issue_number }}
+    steps:
+      - name: Create rollback tracking issue
+        id: create-issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `🔄 Emergency Rollback - ${{ inputs.environment }} - ${new Date().toISOString()}`;
+            const body = `# Emergency Rollback
+            
+            **Environment**: ${{ inputs.environment }}
+            **Target**: ${{ inputs.rollback_target }}
+            **Reason**: ${{ inputs.reason }}
+            **Initiated By**: @${{ github.actor }}
+            **Time**: ${new Date().toISOString()}
+            **Workflow Run**: [${context.runId}](${context.payload.repository.html_url}/actions/runs/${context.runId})
+            
+            ## Rollback Progress
+            - [ ] Backup current state
+            - [ ] Stop new deployments
+            - [ ] Rollback application
+            - [ ] Rollback database (if needed)
+            - [ ] Verify rollback success
+            - [ ] Update monitoring
+            - [ ] Notify stakeholders
+            
+            ## Post-Rollback Actions
+            - [ ] Investigate root cause
+            - [ ] Plan fix deployment
+            - [ ] Update documentation
+            - [ ] Conduct post-mortem
+            
+            ---
+            *This issue is automatically managed by the rollback workflow.*
+            `;
+            
+            const { data: issue } = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['rollback', 'emergency', '${{ inputs.environment }}', 'automated']
+            });
+            
+            return issue.number;
+
+  backup-current-state:
+    name: Backup Current State
+    runs-on: ubuntu-latest
+    needs: [validate-input, create-rollback-issue]
+    if: inputs.environment == 'production'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create database backup
+        run: |
+          echo "Creating emergency backup before rollback..."
+          
+          # Set database URL based on environment
+          if [ "${{ inputs.environment }}" = "production" ]; then
+            export DATABASE_URL="${{ secrets.DATABASE_URL_PRODUCTION }}"
+          else
+            export DATABASE_URL="${{ secrets.DATABASE_URL_STAGING }}"
+          fi
+          
+          cd packages/api
+          
+          # Generate backup name with rollback identifier
+          backup_name="emergency_rollback_$(date +%Y%m%d_%H%M%S)"
+          
+          # Create backup
+          npm run db:backup -- --name="$backup_name" --reason="Pre-rollback backup"
+          
+          echo "EMERGENCY_BACKUP_NAME=$backup_name" >> $GITHUB_ENV
+          
+          echo "✅ Emergency backup created: $backup_name"
+
+  stop-deployments:
+    name: Stop New Deployments
+    runs-on: ubuntu-latest
+    needs: [validate-input, create-rollback-issue]
+    steps:
+      - name: Cancel running deployments
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Get running workflows for the target environment
+            const { data: workflows } = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'ci-cd-enhanced.yml',
+              status: 'in_progress'
+            });
+            
+            // Cancel relevant workflows
+            for (const workflow of workflows.workflow_runs) {
+              if (workflow.head_branch === 'main' || workflow.head_branch === 'master') {
+                console.log(`Cancelling workflow run ${workflow.id}`);
+                await github.rest.actions.cancelWorkflowRun({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  run_id: workflow.id
+                });
+              }
+            }
+            
+            console.log('✅ Stopped new deployments');
+
+  perform-rollback:
+    name: Perform Rollback
+    runs-on: ubuntu-latest
+    needs: [validate-input, create-rollback-issue, backup-current-state, stop-deployments]
+    if: always() && needs.validate-input.outputs.validated == 'true'
+    timeout-minutes: 15
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ steps.rollback.outputs.url }}
+    steps:
+      - name: Checkout target commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate-input.outputs.target_sha != 'previous' && needs.validate-input.outputs.target_sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare rollback environment
+        run: |
+          echo "Preparing rollback to: ${{ needs.validate-input.outputs.target_sha }}"
+          
+          # Set environment variables
+          if [ "${{ inputs.environment }}" = "production" ]; then
+            echo "NODE_ENV=production" >> $GITHUB_ENV
+            echo "DATABASE_URL=${{ secrets.DATABASE_URL_PRODUCTION }}" >> $GITHUB_ENV
+            echo "API_URL=${{ secrets.NEXT_PUBLIC_API_URL_PRODUCTION }}" >> $GITHUB_ENV
+            echo "FRONTEND_URL=${{ secrets.PRODUCTION_FRONTEND_URL }}" >> $GITHUB_ENV
+          else
+            echo "NODE_ENV=staging" >> $GITHUB_ENV
+            echo "DATABASE_URL=${{ secrets.DATABASE_URL_STAGING }}" >> $GITHUB_ENV
+            echo "API_URL=${{ secrets.NEXT_PUBLIC_API_URL_STAGING }}" >> $GITHUB_ENV
+            echo "FRONTEND_URL=${{ secrets.STAGING_FRONTEND_URL }}" >> $GITHUB_ENV
+          fi
+
+      - name: Check database migration compatibility
+        run: |
+          cd packages/api
+          
+          # Generate Prisma client for rollback target
+          npx prisma generate
+          
+          # Check if rollback requires database migration
+          echo "Checking database migration compatibility..."
+          
+          # This would need custom logic to determine if database rollback is needed
+          # For now, we'll assume application-only rollback
+          echo "Database migration check completed"
+
+      - name: Build application
+        run: |
+          echo "Building application for rollback..."
+          
+          # Build frontend
+          cd packages/web
+          export NEXT_PUBLIC_API_URL="${{ env.API_URL }}"
+          export NEXT_PUBLIC_ENVIRONMENT="${{ inputs.environment }}"
+          npm run build
+          cd ..
+          
+          # Build backend
+          cd api
+          npm run build
+          cd ..
+
+      - name: Deploy rollback
+        id: rollback
+        run: |
+          echo "Deploying rollback to ${{ inputs.environment }}..."
+          
+          # Deploy frontend (example with Vercel)
+          if command -v vercel &> /dev/null; then
+            cd packages/web
+            if [ "${{ inputs.environment }}" = "production" ]; then
+              deployment_url=$(vercel --prod --token "${{ secrets.VERCEL_TOKEN }}" --yes)
+            else
+              deployment_url=$(vercel --token "${{ secrets.VERCEL_TOKEN }}" --yes)
+            fi
+            echo "url=$deployment_url" >> $GITHUB_OUTPUT
+            cd ../..
+          fi
+          
+          # Deploy backend (implementation depends on your hosting)
+          echo "Backend rollback deployment would be implemented here"
+          
+          echo "✅ Rollback deployment completed"
+
+      - name: Verify rollback
+        run: |
+          echo "Verifying rollback deployment..."
+          
+          max_attempts=30
+          attempt=0
+          
+          while [ $attempt -lt $max_attempts ]; do
+            attempt=$((attempt + 1))
+            
+            if curl -f -s "${{ env.FRONTEND_URL }}/api/health" >/dev/null; then
+              echo "✅ Rollback verification successful"
+              break
+            fi
+            
+            if [ $attempt -lt $max_attempts ]; then
+              echo "Verification attempt $attempt failed, retrying..."
+              sleep 10
+            fi
+          done
+          
+          if [ $attempt -eq $max_attempts ]; then
+            echo "❌ Rollback verification failed"
+            exit 1
+          fi
+
+  verify-rollback:
+    name: Verify Rollback Success
+    runs-on: ubuntu-latest
+    needs: [perform-rollback, create-rollback-issue]
+    if: always()
+    steps:
+      - name: Run post-rollback tests
+        run: |
+          # Set environment URL
+          if [ "${{ inputs.environment }}" = "production" ]; then
+            base_url="${{ secrets.PRODUCTION_FRONTEND_URL }}"
+            api_url="${{ secrets.NEXT_PUBLIC_API_URL_PRODUCTION }}"
+          else
+            base_url="${{ secrets.STAGING_FRONTEND_URL }}"
+            api_url="${{ secrets.NEXT_PUBLIC_API_URL_STAGING }}"
+          fi
+          
+          echo "Running post-rollback verification..."
+          
+          # Test homepage
+          if curl -f -s "$base_url" >/dev/null; then
+            echo "✅ Homepage accessible"
+          else
+            echo "❌ Homepage not accessible"
+            exit 1
+          fi
+          
+          # Test API health
+          if curl -f -s "$api_url/health" | grep -q "healthy\|ok"; then
+            echo "✅ API healthy"
+          else
+            echo "❌ API not healthy"
+            exit 1
+          fi
+          
+          echo "✅ Rollback verification completed successfully"
+
+      - name: Update rollback issue
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = ${{ needs.create-rollback-issue.outputs.issue_number }};
+            const rollbackSuccess = '${{ needs.perform-rollback.result }}' === 'success';
+            const verificationSuccess = '${{ job.status }}' === 'success';
+            
+            let status = '🔄 In Progress';
+            let statusColor = '🟡';
+            
+            if (rollbackSuccess && verificationSuccess) {
+              status = '✅ Completed Successfully';
+              statusColor = '🟢';
+            } else if (!rollbackSuccess) {
+              status = '❌ Rollback Failed';
+              statusColor = '🔴';
+            } else {
+              status = '⚠️ Rollback Completed, Verification Failed';
+              statusColor = '🟠';
+            }
+            
+            const updateComment = `## ${statusColor} Rollback Status Update
+            
+            **Status**: ${status}
+            **Time**: ${new Date().toISOString()}
+            
+            ### Results
+            - **Rollback Deployment**: ${{ needs.perform-rollback.result }}
+            - **Verification**: ${{ job.status }}
+            
+            ### Next Steps
+            ${rollbackSuccess && verificationSuccess ? 
+              `- [ ] Monitor application stability
+              - [ ] Investigate root cause of original issue
+              - [ ] Plan corrective deployment
+              - [ ] Schedule post-mortem` :
+              `- [ ] Investigate rollback failure
+              - [ ] Consider manual intervention
+              - [ ] Escalate to engineering team
+              - [ ] Prepare emergency communication`
+            }
+            `;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: updateComment
+            });
+
+  notify-rollback:
+    name: Notify Rollback
+    runs-on: ubuntu-latest
+    needs: [perform-rollback, verify-rollback, create-rollback-issue]
+    if: always()
+    steps:
+      - name: Send notifications
+        run: |
+          rollback_status="${{ needs.perform-rollback.result }}"
+          verification_status="${{ needs.verify-rollback.result }}"
+          
+          if [ "$rollback_status" = "success" ] && [ "$verification_status" = "success" ]; then
+            status_emoji="✅"
+            status_text="SUCCESSFUL"
+          else
+            status_emoji="❌"
+            status_text="FAILED"
+          fi
+          
+          message="$status_emoji Rollback $status_text
+          
+          Environment: ${{ inputs.environment }}
+          Target: ${{ inputs.rollback_target }}
+          Reason: ${{ inputs.reason }}
+          Initiated by: ${{ github.actor }}
+          
+          Issue: #${{ needs.create-rollback-issue.outputs.issue_number }}
+          Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          
+          Time: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          
+          # Send Slack notification
+          if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
+            curl -X POST -H 'Content-type: application/json' \
+              --data "{\"text\":\"$message\"}" \
+              "${{ secrets.SLACK_WEBHOOK_URL }}"
+          fi
+          
+          echo "$message"

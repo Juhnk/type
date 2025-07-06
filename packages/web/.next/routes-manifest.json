@@ -28,6 +28,12 @@
       "namedRegex": "^/_not\\-found(?:/)?$"
     },
     {
+      "page": "/dev-status",
+      "regex": "^/dev\\-status(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dev\\-status(?:/)?$"
+    },
+    {
       "page": "/favicon.ico",
       "regex": "^/favicon\\.ico(?:/)?$",
       "routeKeys": {},

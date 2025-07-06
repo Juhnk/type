@@ -1,6 +1,6 @@
 import { getTestHistory, clearTestHistory, type TestResult } from './history';
 
-const API_BASE_URL = 'http://localhost:3003';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
 
 interface AuthResponse {
   user: {
@@ -37,6 +37,9 @@ interface WordsResponse {
     count: number;
     total_available: number;
   };
+  enhanced_text?: string;
+  punctuation_enabled?: boolean;
+  numbers_enabled?: boolean;
 }
 
 interface WordListsResponse {
@@ -234,13 +237,29 @@ class ApiClient {
   getWords = async (
     list: string = 'english1k',
     limit: number = 100,
-    randomize: boolean = true
+    randomize: boolean = true,
+    options: {
+      punctuation?: boolean;
+      numbers?: boolean;
+      punctuationDensity?: 'light' | 'medium' | 'heavy';
+    } = {}
   ): Promise<WordsResponse> => {
     const params = new URLSearchParams({
       list,
       limit: limit.toString(),
       randomize: randomize.toString(),
     });
+
+    // Add enhancement parameters if specified
+    if (options.punctuation !== undefined) {
+      params.append('punctuation', options.punctuation.toString());
+    }
+    if (options.numbers !== undefined) {
+      params.append('numbers', options.numbers.toString());
+    }
+    if (options.punctuationDensity) {
+      params.append('punctuation_density', options.punctuationDensity);
+    }
 
     return this.makeRequest<WordsResponse>(`/api/words?${params.toString()}`);
   };

@@ -1,0 +1,199 @@
+// Enhanced Prisma schema for production deployment
+// This includes performance indexes, additional fields, and production optimizations
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql" // Production uses PostgreSQL
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String         @id @default(cuid())
+  email        String         @unique
+  passwordHash String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  
+  // Enhanced user profile fields
+  displayName  String?
+  avatar       String?
+  timezone     String?        @default("UTC")
+  language     String         @default("en")
+  isActive     Boolean        @default(true)
+  lastSeenAt   DateTime?
+  
+  // Typing skill metrics (calculated fields)
+  totalTests   Int           @default(0)
+  averageWpm   Float?
+  bestWpm      Int?
+  averageAccuracy Float?
+  totalTimeTyping Int        @default(0) // in seconds
+  
+  // User preferences
+  preferredMode     String?  // 'time', 'words', 'quote'
+  preferredDuration Int?     // for time mode
+  preferredWordCount Int?    // for words mode
+  favoriteWordList  String?  // 'english1k', 'english10k', etc.
+  
+  userSettings UserSettings?
+  testResults  TestResult[]
+  achievements UserAchievement[]
+  
+  @@map("Users")
+  @@index([createdAt])
+  @@index([email])
+  @@index([isActive])
+  @@index([averageWpm])
+  @@index([totalTests])
+}
+
+model UserSettings {
+  userId       String   @id
+  theme        String   @default("slate")
+  caretStyle   String   @default("line")
+  paceCaretWpm Int      @default(0)
+  
+  // Additional UI preferences
+  fontSize     Int      @default(16)
+  soundEnabled Boolean  @default(false)
+  keyboardSound String  @default("none")
+  showWpmLive  Boolean  @default(true)
+  showProgress Boolean  @default(true)
+  
+  // Difficulty preferences
+  blindMode    Boolean  @default(false)
+  punctuationPreference String @default("sometimes") // 'never', 'sometimes', 'always'
+  numbersPreference String @default("sometimes")
+  
+  // Privacy settings
+  profilePublic Boolean @default(false)
+  shareResults  Boolean @default(true)
+  
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  
+  @@map("UserSettings")
+}
+
+model TestResult {
+  id           String   @id @default(cuid())
+  userId       String
+  wpm          Int
+  accuracy     Float
+  rawWpm       Int
+  consistency  Float?
+  config       String   // JSON configuration
+  tags         String   // Comma-separated tags
+  timestamp    DateTime @default(now())
+  
+  // Enhanced result data
+  mode         String   // 'time', 'words', 'quote'
+  duration     Int?     // For time mode (seconds)
+  wordCount    Int?     // For words mode
+  difficulty   String   @default("Normal") // 'Normal', 'Expert', 'Master'
+  textSource   String   @default("english1k")
+  
+  // Detailed performance metrics
+  totalChars   Int      @default(0)
+  correctChars Int      @default(0)
+  incorrectChars Int    @default(0)
+  totalKeystrokes Int   @default(0)
+  backspaces   Int      @default(0)
+  
+  // Time tracking
+  actualTime   Int?     // Actual time taken (milliseconds)
+  startTime    DateTime?
+  endTime      DateTime?
+  
+  // Error analysis
+  errorRate    Float?   // Errors per minute
+  commonErrors String?  // JSON array of common error patterns
+  
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  
+  @@map("TestResults")
+  @@index([userId, timestamp])
+  @@index([wpm])
+  @@index([accuracy])
+  @@index([mode])
+  @@index([difficulty])
+  @@index([textSource])
+  @@index([timestamp])
+}
+
+model Achievement {
+  id          String @id @default(cuid())
+  name        String @unique
+  description String
+  icon        String
+  category    String // 'speed', 'accuracy', 'consistency', 'milestone'
+  condition   String // JSON condition for unlocking
+  points      Int    @default(0)
+  isSecret    Boolean @default(false)
+  
+  users       UserAchievement[]
+  
+  @@map("Achievements")
+  @@index([category])
+}
+
+model UserAchievement {
+  id            String    @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime  @default(now())
+  progress      Float?    // For progressive achievements (0-100)
+  
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement   Achievement  @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, achievementId])
+  @@map("UserAchievements")
+  @@index([userId])
+  @@index([unlockedAt])
+}
+
+model WordListStats {
+  id           String   @id @default(cuid())
+  listName     String   @unique
+  totalWords   Int
+  avgDifficulty Float?
+  usage        Int      @default(0) // How many times used
+  lastUsed     DateTime?
+  
+  @@map("WordListStats")
+  @@index([usage])
+  @@index([lastUsed])
+}
+
+model DailyStats {
+  id        String   @id @default(cuid())
+  date      DateTime @unique
+  totalUsers Int     @default(0)
+  totalTests Int     @default(0)
+  avgWpm    Float?
+  avgAccuracy Float?
+  newUsers  Int      @default(0)
+  
+  @@map("DailyStats")
+  @@index([date])
+}
+
+// Views for analytics (these would be created as database views)
+// CREATE VIEW user_performance_summary AS
+// SELECT 
+//   u.id,
+//   u.email,
+//   u.display_name,
+//   COUNT(tr.id) as total_tests,
+//   AVG(tr.wpm) as average_wpm,
+//   MAX(tr.wpm) as best_wpm,
+//   AVG(tr.accuracy) as average_accuracy,
+//   MIN(tr.timestamp) as first_test,
+//   MAX(tr.timestamp) as last_test
+// FROM "Users" u
+// LEFT JOIN "TestResults" tr ON u.id = tr.user_id
+// GROUP BY u.id, u.email, u.display_name;

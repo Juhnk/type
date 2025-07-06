@@ -120,3 +120,50 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom animations */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+/* Ultra-smooth scrolling optimizations for typing text */
+.scrolling-text {
+  transition: transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
+  transform-origin: top left;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+.scrolling-text-line {
+  height: 2rem; /* Exactly 32px - matches leading-8 */
+  line-height: 2rem;
+  display: flex;
+  align-items: center;
+  contain: layout style;
+  transform: translateZ(0); /* Individual line hardware acceleration */
+}
+
+/* Performance optimizations */
+.typing-container {
+  contain: layout style paint;
+  transform: translateZ(0); /* Force hardware acceleration */
+  isolation: isolate; /* Create new stacking context */
+}
+
+/* Eliminate sub-pixel rendering issues */
+.ultra-smooth-text {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeSpeed;
+  transform: translateZ(0);
+}

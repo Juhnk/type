@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { inter, robotoMono } from '@/lib/fonts';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { CommandPalette } from '@/components/core/CommandPalette';
+import { EnhancedCommandPalette } from '@/components/core/EnhancedCommandPalette';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { AuthProvider } from '@/components/providers/AuthProvider';
 import { Toaster } from 'sonner';
@@ -31,7 +31,7 @@ export default function RootLayout({
             </main>
             <Footer />
           </div>
-          <CommandPalette />
+          <EnhancedCommandPalette />
           <AuthModal />
           <Toaster />
         </AuthProvider>

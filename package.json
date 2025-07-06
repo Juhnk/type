@@ -8,6 +8,16 @@
   "scripts": {
     "dev": "npm run dev --workspace=packages/web",
     "build": "npm run build --workspace=packages/web",
-    "test": "npm run test --workspace=packages/web"
+    "test": "npm run test --workspace=packages/web",
+    "dev:setup": "./scripts/setup-dev.sh",
+    "dev:full": "./scripts/start-dev.sh",
+    "dev:health": "./scripts/health-check.sh",
+    "dev:reset": "./scripts/troubleshoot.sh reset",
+    "troubleshoot": "./scripts/troubleshoot.sh",
+    "db:studio": "npm run db:studio --workspace=@typeamp/api",
+    "postinstall": "npm run generate --workspace=@typeamp/api"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }
