@@ -192,22 +192,30 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   // Actions
   setTestConfig: (config: Partial<TestConfig>) => {
+    const { gameStatus } = get();
+
+    // Store previous values to detect changes
+    const prevConfig = get().testConfig;
+
     // Reset timer if duration or mode changes
     if (config.duration !== undefined || config.mode !== undefined) {
       get().resetTimer();
     }
 
+    // Update configuration
     set((state) => ({
       testConfig: { ...state.testConfig, ...config },
     }));
 
-    // Prepare new game if any relevant config changed
-    if (
-      config.textSource ||
-      config.wordCount ||
-      config.mode ||
-      config.punctuation
-    ) {
+    // Check if any configuration actually changed
+    const configChanged = Object.keys(config).some(
+      (key) =>
+        config[key as keyof TestConfig] !== prevConfig[key as keyof TestConfig]
+    );
+
+    // Prepare new game if any config changed and game is not running
+    // This ensures all Command Palette changes trigger game preparation
+    if (configChanged && gameStatus !== 'running') {
       get().prepareGame();
     }
 
@@ -230,7 +238,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     set({
       textToType: text,
-      charStates: text.split('').map((char, index) => ({
+      charStates: text.split('').map((char: string, index: number) => ({
         char,
         status: index === 0 ? ('current' as const) : ('default' as const),
       })),
@@ -260,11 +268,15 @@ export const useGameStore = create<GameState>((set, get) => ({
         wordLimit = Math.max(100, Math.ceil((testConfig.duration * 40) / 60));
       }
 
-      const response = await getWords(testConfig.textSource, wordLimit, true);
+      const response = await getWords(testConfig.textSource, wordLimit, true, {
+        punctuation: testConfig.punctuation,
+        numbers: testConfig.punctuation, // Include numbers when punctuation is enabled
+        punctuationDensity: 'medium',
+      });
 
       if (response.words && response.words.length > 0) {
-        // Join words with spaces to create text
-        const text = response.words.join(' ');
+        // Use enhanced text from API if available, otherwise join words
+        const text = response.enhanced_text || response.words.join(' ');
         get().setTextToType(text);
       } else {
         throw new Error('No words received from API');
@@ -308,20 +320,28 @@ export const useGameStore = create<GameState>((set, get) => ({
         wordLimit = 200;
       }
 
-      const response = await getWords(testConfig.textSource, wordLimit, true);
+      const response = await getWords(testConfig.textSource, wordLimit, true, {
+        punctuation: testConfig.punctuation,
+        numbers: testConfig.punctuation, // Include numbers when punctuation is enabled
+        punctuationDensity: 'medium',
+      });
 
       if (response.words && response.words.length > 0) {
         // Store the fetched words
         set({ words: response.words });
 
-        // Generate text based on mode and configuration
-        const generatedText = generateTextFromWords(response.words, testConfig);
+        // Use enhanced text from API if available, otherwise generate locally
+        const generatedText =
+          response.enhanced_text ||
+          generateTextFromWords(response.words, testConfig);
 
         // Set the generated text and update char states
-        const newCharStates = generatedText.split('').map((char, index) => ({
-          char,
-          status: index === 0 ? ('current' as const) : ('default' as const),
-        }));
+        const newCharStates = generatedText
+          .split('')
+          .map((char: string, index: number) => ({
+            char,
+            status: index === 0 ? ('current' as const) : ('default' as const),
+          }));
 
         // Calculate word boundaries
         const boundaries = get().calculateWordBoundaries(generatedText);
@@ -356,10 +376,12 @@ export const useGameStore = create<GameState>((set, get) => ({
 
       // Generate fallback text
       const fallbackText = generateFallbackText(testConfig);
-      const fallbackCharStates = fallbackText.split('').map((char, index) => ({
-        char,
-        status: index === 0 ? ('current' as const) : ('default' as const),
-      }));
+      const fallbackCharStates = fallbackText
+        .split('')
+        .map((char: string, index: number) => ({
+          char,
+          status: index === 0 ? ('current' as const) : ('default' as const),
+        }));
 
       // Calculate word boundaries for fallback text
       const boundaries = get().calculateWordBoundaries(fallbackText);
@@ -399,10 +421,12 @@ export const useGameStore = create<GameState>((set, get) => ({
   useFallbackWords: () => {
     const { testConfig } = get();
     const fallbackText = generateFallbackText(testConfig);
-    const fallbackCharStates = fallbackText.split('').map((char, index) => ({
-      char,
-      status: index === 0 ? ('current' as const) : ('default' as const),
-    }));
+    const fallbackCharStates = fallbackText
+      .split('')
+      .map((char: string, index: number) => ({
+        char,
+        status: index === 0 ? ('current' as const) : ('default' as const),
+      }));
 
     // Calculate word boundaries
     const boundaries = get().calculateWordBoundaries(fallbackText);
@@ -603,10 +627,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     get().resetTimer();
 
     const { textToType } = get();
-    const newCharStates = textToType.split('').map((char, index) => ({
-      char,
-      status: index === 0 ? ('current' as const) : ('default' as const),
-    }));
+    const newCharStates = textToType
+      .split('')
+      .map((char: string, index: number) => ({
+        char,
+        status: index === 0 ? ('current' as const) : ('default' as const),
+      }));
 
     set({
       userInput: '',
@@ -1009,11 +1035,13 @@ export const useGameStore = create<GameState>((set, get) => ({
     // Calculate which line is currently the "second visible line"
     const secondLineIndex = scrollOffset + 1;
 
-    // Trigger scroll when user reaches the second visible line
-    // This keeps the user typing position in the middle line after scroll
+    // FIXED: Trigger scroll when user STARTS typing on the second visible line
+    // Check if user is actively typing on the second line (not just reached it)
     if (
-      currentLineIndex >= secondLineIndex &&
-      secondLineIndex < lines.length - 1
+      currentLineIndex === secondLineIndex &&
+      secondLineIndex < lines.length - 1 &&
+      lineCharOffsets[secondLineIndex] !== undefined &&
+      currentPosition > lineCharOffsets[secondLineIndex] // Must have typed at least one character on second line
     ) {
       const newScrollOffset = scrollOffset + 1;
 
@@ -1052,7 +1080,11 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     try {
       // Generate additional words
-      const response = await getWords(testConfig.textSource, 50, true);
+      const response = await getWords(testConfig.textSource, 50, true, {
+        punctuation: testConfig.punctuation,
+        numbers: testConfig.punctuation, // Include numbers when punctuation is enabled
+        punctuationDensity: 'medium',
+      });
 
       if (response.words && response.words.length > 0) {
         get().appendDynamicContent(response.words);
