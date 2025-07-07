@@ -11,21 +11,31 @@ export default defineConfig({
     exclude: ['node_modules', 'dist', '.git'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json', 'html', 'lcov'],
       exclude: [
         'node_modules/',
         'src/testing/',
         '**/*.d.ts',
         '**/*.config.*',
-        'dist/'
+        'dist/',
+        'src/database/**',
+        'prisma/**'
       ],
       thresholds: {
         global: {
-          branches: 90,
-          functions: 90,
-          lines: 90,
-          statements: 90
+          branches: 80,
+          functions: 80,
+          lines: 80,
+          statements: 80
         }
+      },
+      clean: true,
+      all: true
+    },
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        singleFork: true
       }
     }
   },

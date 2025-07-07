@@ -15,7 +15,17 @@
     "dev:reset": "./scripts/troubleshoot.sh reset",
     "troubleshoot": "./scripts/troubleshoot.sh",
     "db:studio": "npm run db:studio --workspace=@typeamp/api",
-    "postinstall": "npm run generate --workspace=@typeamp/api"
+    "postinstall": "npm run generate --workspace=@typeamp/api",
+    "test:all": "npm run test:run --workspaces --if-present",
+    "test:coverage": "npm run test:coverage --workspaces --if-present",
+    "test:unit": "npm run test:unit --workspaces --if-present",
+    "test:integration": "npm run test:integration --workspaces --if-present",
+    "test:e2e": "npm run test:e2e --workspace=type",
+    "test:watch": "npm run test:watch --workspaces --if-present",
+    "lint:all": "npm run lint --workspaces --if-present",
+    "type-check:all": "npm run type-check --workspaces --if-present",
+    "ci:test": "npm run test:all && npm run lint:all && npm run type-check:all",
+    "ci:build": "npm run build --workspaces --if-present"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

@@ -24,7 +24,10 @@
     "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "test:unit": "vitest run --testPathPattern='^((?!integration).)*\\.test\\.ts$'",
+    "test:integration": "vitest run --testPathPattern='integration\\.test\\.ts$'",
+    "test:debug": "vitest --inspect-brk --inspect --no-file-parallelism"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.56.0",
