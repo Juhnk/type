@@ -1,3 +1,10 @@
 {
-  "/page": "app/page.js"
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/cron/cleanup/route": "app/api/cron/cleanup/route.js",
+  "/api/health/route": "app/api/health/route.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/dev-status/page": "app/dev-status/page.js",
+  "/learn/page": "app/learn/page.js",
+  "/page": "app/page.js",
+  "/profile/page": "app/profile/page.js"
 }

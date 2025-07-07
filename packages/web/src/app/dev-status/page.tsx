@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -108,7 +108,7 @@ export default function DevStatusPage() {
     }
   };
 
-  const checkAllServices = async () => {
+  const checkAllServices = useCallback(async () => {
     setIsChecking(true);
 
     try {
@@ -141,7 +141,7 @@ export default function DevStatusPage() {
     } finally {
       setIsChecking(false);
     }
-  };
+  }, [services]);
 
   useEffect(() => {
     checkAllServices();
