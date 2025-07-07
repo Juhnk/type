@@ -33,6 +33,12 @@ vi.mock('@/lib/textGenerator', () => ({
   generateFallbackText: vi.fn(() => 'fallback text for testing'),
 }));
 
+// Mock API client
+vi.mock('@/lib/api-client', () => ({
+  getWords: vi.fn(),
+  saveTestResult: vi.fn(),
+}));
+
 import { getWords } from '@/lib/api-client';
 import { generateTextFromWords } from '@/lib/textGenerator';
 
