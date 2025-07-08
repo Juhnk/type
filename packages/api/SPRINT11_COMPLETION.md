@@ -133,7 +133,7 @@
 ### Testing Stack
 - **Framework**: Vitest 3.2.4 with Node.js environment
 - **HTTP Testing**: Supertest 7.1.1 for API endpoint validation
-- **Database**: Prisma Client with SQLite test database isolation
+- **Database**: Prisma Client with PostgreSQL test database isolation
 - **Coverage**: V8 provider with 90%+ thresholds across all metrics
 
 ### Test Database Architecture

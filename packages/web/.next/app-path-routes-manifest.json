@@ -3,6 +3,7 @@
   "/api/cron/cleanup/route": "/api/cron/cleanup",
   "/api/health/route": "/api/health",
   "/favicon.ico/route": "/favicon.ico",
+  "/customize/page": "/customize",
   "/dev-status/page": "/dev-status",
   "/learn/page": "/learn",
   "/page": "/",

@@ -15,8 +15,8 @@ let testPrisma: PrismaClient;
  */
 export const initTestDatabase = () => {
   if (!testPrisma) {
-    // Use dedicated test database for PostgreSQL
-    const testDbUrl = process.env.TEST_DATABASE_URL || 'postgresql://typeamp_user:typeamp_dev_pass@localhost:5432/typeamp_test';
+    // Use DATABASE_URL from environment (set in setup.ts or CI), fallback to TEST_DATABASE_URL, then default
+    const testDbUrl = process.env.DATABASE_URL || process.env.TEST_DATABASE_URL || 'postgresql://typeamp_user:typeamp_dev_pass@localhost:5432/typeamp_test';
     
     testPrisma = new PrismaClient({
       datasources: {

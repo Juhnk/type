@@ -48,11 +48,11 @@ export function Header() {
           <span>Learn</span>
         </Link>
         <Link
-          href="/settings"
+          href="/customize"
           className="text-muted-foreground hover:text-foreground flex items-center space-x-2 transition-colors"
         >
           <Settings className="h-4 w-4" />
-          <span>Settings</span>
+          <span>Customize</span>
         </Link>
       </nav>
 

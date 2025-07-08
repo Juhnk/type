@@ -3,6 +3,7 @@ import { authRoutes } from './routes/auth.js';
 import { testRoutes } from './routes/tests.js';
 import { aiRoutes } from './routes/ai.js';
 import { wordsRoutes } from './routes/words.js';
+import { settingsRoutes } from './routes/settings.js';
 
 const fastify = Fastify({
   logger: true
@@ -37,7 +38,8 @@ const start = async () => {
           { name: 'words', description: 'Word list operations' },
           { name: 'auth', description: 'Authentication operations' },
           { name: 'ai', description: 'AI-powered features' },
-          { name: 'tests', description: 'Typing test operations' }
+          { name: 'tests', description: 'Typing test operations' },
+          { name: 'settings', description: 'User settings and preferences' }
         ]
       }
     });
@@ -77,6 +79,7 @@ const start = async () => {
     await fastify.register(testRoutes);
     await fastify.register(aiRoutes);
     await fastify.register(wordsRoutes);
+    await fastify.register(settingsRoutes);
 
     // Health check routes
     fastify.get('/', async (request, reply) => {

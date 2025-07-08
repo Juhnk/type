@@ -149,15 +149,9 @@ export class DatabaseManager {
         actualBackupPath = backupPath.replace('.gz', '');
       }
 
-      // Restore based on database type
-      if (this.dbPath.includes('.db')) {
-        // SQLite restore
-        await fs.copyFile(actualBackupPath, this.dbPath);
-      } else {
-        // PostgreSQL restore
-        const psqlCommand = `psql "${process.env.DATABASE_URL}" < "${actualBackupPath}"`;
-        await execAsync(psqlCommand);
-      }
+      // PostgreSQL restore
+      const psqlCommand = `psql "${process.env.DATABASE_URL}" < "${actualBackupPath}"`;
+      await execAsync(psqlCommand);
 
       if (validateSchema) {
         console.log('✅ Validating restored schema...');
@@ -289,13 +283,9 @@ export class DatabaseManager {
    */
   private async getDatabaseSize(): Promise<string> {
     try {
-      if (this.dbPath.includes('.db')) {
-        const stats = await fs.stat(this.dbPath);
-        return this.formatBytes(stats.size);
-      } else {
-        // For PostgreSQL, would query pg_database_size
-        return 'Unknown';
-      }
+      // For PostgreSQL, would query pg_database_size
+      // This would require a database connection to execute the query
+      return 'Unknown';
     } catch (error) {
       return 'Unknown';
     }
@@ -342,16 +332,9 @@ export class DatabaseManager {
    * Drop database (be careful!)
    */
   private async dropDatabase(): Promise<void> {
-    if (this.dbPath.includes('.db')) {
-      try {
-        await fs.unlink(this.dbPath);
-        console.log('✅ Database file deleted');
-      } catch (error) {
-        // File might not exist, that's ok
-      }
-    } else {
-      console.log('⚠️ PostgreSQL database drop not implemented (safety measure)');
-    }
+    console.log('⚠️ PostgreSQL database drop not implemented (safety measure)');
+    // In production, dropping a PostgreSQL database requires careful consideration
+    // and should be done through proper database management tools
   }
 
   /**

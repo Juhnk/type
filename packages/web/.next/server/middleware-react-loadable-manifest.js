@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{}";
+self.__REACT_LOADABLE_MANIFEST='{"store/useSettingsStore.ts -> @/lib/api-client":{"id":39879,"files":["static/chunks/879.7f4c2c2f7f0c0f35.js"]}}';

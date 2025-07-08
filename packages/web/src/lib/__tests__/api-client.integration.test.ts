@@ -406,6 +406,7 @@ describe('API Client Integration Tests', () => {
   describe('Authentication Integration', () => {
     it('should handle authenticated requests for saveSingleTest', async () => {
       const testResult = {
+        id: 'test-id-1',
         wpm: 75,
         accuracy: 98.5,
         duration: 60,
@@ -414,6 +415,9 @@ describe('API Client Integration Tests', () => {
         textSource: 'english1k',
         punctuation: true,
         timestamp: Date.now(),
+        totalChars: 300,
+        correctChars: 295,
+        incorrectChars: 5,
       };
 
       mockFetch.mockResolvedValueOnce({
@@ -461,6 +465,7 @@ describe('API Client Integration Tests', () => {
   describe('Save Test Results Integration', () => {
     it('should save test results with authentication', async () => {
       const testResult = {
+        id: 'test-id-2',
         wpm: 75,
         accuracy: 98.5,
         duration: 60,
@@ -469,6 +474,9 @@ describe('API Client Integration Tests', () => {
         textSource: 'english1k',
         punctuation: true,
         timestamp: Date.now(),
+        totalChars: 300,
+        correctChars: 295,
+        incorrectChars: 5,
       };
 
       mockFetch.mockResolvedValueOnce({
@@ -491,8 +499,12 @@ describe('API Client Integration Tests', () => {
 
     it('should handle save errors gracefully', async () => {
       const testResult = {
+        id: 'test-id-3',
         wpm: 75,
         accuracy: 98.5,
+        totalChars: 300,
+        correctChars: 295,
+        incorrectChars: 5,
         duration: 60,
         mode: 'time' as const,
         difficulty: 'Normal' as const,

@@ -560,7 +560,7 @@ describe('Database Operations and Prisma Integration', () => {
 
   describe('Data Validation and Constraints', () => {
     it('should validate email format in application layer', async () => {
-      // Since SQLite doesn't enforce email format, this is tested in API layer
+      // Email format validation is handled in the application layer
       const invalidEmails = ['invalid', '@test.com', 'test@', ''];
       
       for (const email of invalidEmails) {

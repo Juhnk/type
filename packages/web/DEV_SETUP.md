@@ -122,7 +122,7 @@ Both should return JSON with user data and JWT token.
 ### Backend (localhost:3003)
 
 - Fastify with TypeScript
-- Prisma ORM with SQLite (development)
+- Prisma ORM with PostgreSQL
 - JWT authentication
 - CORS configured for localhost:3000
 

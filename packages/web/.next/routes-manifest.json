@@ -28,6 +28,12 @@
       "namedRegex": "^/_not\\-found(?:/)?$"
     },
     {
+      "page": "/customize",
+      "regex": "^/customize(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/customize(?:/)?$"
+    },
+    {
       "page": "/dev-status",
       "regex": "^/dev\\-status(?:/)?$",
       "routeKeys": {},

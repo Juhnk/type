@@ -7,9 +7,12 @@ import {
 } from './testUtils.js';
 
 // Set test environment variables
-process.env.JWT_SECRET = 'test-jwt-secret-key';
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret-key';
 process.env.NODE_ENV = 'test';
-process.env.DATABASE_URL = 'postgresql://typeamp_user:typeamp_dev_pass@localhost:5432/typeamp_test';
+// Use DATABASE_URL from environment if provided (for CI), otherwise use local default
+if (!process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = 'postgresql://typeamp_user:typeamp_dev_pass@localhost:5432/typeamp_test';
+}
 
 // Global test setup
 beforeAll(async () => {

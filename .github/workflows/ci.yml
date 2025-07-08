@@ -28,6 +28,7 @@ env:
   NEXT_TELEMETRY_DISABLED: 1
   # Cache versions
   CACHE_VERSION: v1
+  DEPENDENCY_CACHE_KEY: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
 
 jobs:
   # Quick feedback loop (< 5 minutes)

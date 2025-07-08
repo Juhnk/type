@@ -28,6 +28,7 @@ env:
   NEXT_TELEMETRY_DISABLED: 1
   # Cache versions
   CACHE_VERSION: v1
+  DEPENDENCY_CACHE_KEY: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
 
 jobs:
   # Quick feedback loop (< 5 minutes)
@@ -240,7 +241,6 @@ jobs:
     services:
       postgres:
         image: postgres:15-alpine
-        if: matrix.needs-db
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: typeamp_test
