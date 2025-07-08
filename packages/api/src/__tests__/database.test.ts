@@ -6,7 +6,7 @@ import {
   createTestResult,
   resetTestDatabase 
 } from '../testing/testUtils.js';
-import { PrismaClient } from '../generated/prisma/index.js';
+import { PrismaClient, Prisma } from '../generated/prisma/index.js';
 
 describe('Database Operations and Prisma Integration', () => {
   let prisma: PrismaClient;
@@ -416,7 +416,7 @@ describe('Database Operations and Prisma Integration', () => {
 
       const usersWithHighWpm = users.filter(user => {
         if (user.testResults.length === 0) return false;
-        const avgWpm = user.testResults.reduce((sum, result) => sum + result.wpm, 0) / user.testResults.length;
+        const avgWpm = user.testResults.reduce((sum: number, result) => sum + result.wpm, 0) / user.testResults.length;
         return avgWpm > 80;
       });
 

@@ -180,7 +180,7 @@ describe('API Integration Tests', () => {
       expect(response.body.length).toBe(3);
       
       // Should be ordered by timestamp (newest first)
-      const wpms = response.body.map((r: any) => r.wpm);
+      const wpms = response.body.map((r: { wpm: number }) => r.wpm);
       expect(wpms).toEqual([90, 80, 70]);
     });
 
@@ -582,8 +582,8 @@ describe('API Integration Tests', () => {
       expect(apiResults.body.length).toBe(3);
 
       // API and database should be consistent
-      const dbWpms = dbUser!.testResults.map(r => r.wpm).sort();
-      const apiWpms = apiResults.body.map((r: any) => r.wpm).sort();
+      const dbWpms = dbUser!.testResults.map((r) => r.wpm).sort();
+      const apiWpms = apiResults.body.map((r: { wpm: number }) => r.wpm).sort();
       
       expect(dbWpms).toEqual(apiWpms);
     });

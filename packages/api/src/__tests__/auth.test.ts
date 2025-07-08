@@ -179,7 +179,7 @@ describe('Authentication API', () => {
       // Verify database integrity
       const prisma = initTestDatabase();
       const users = await prisma.user.findMany();
-      expect(users.every(user => user.email.includes('@'))).toBe(true);
+      expect(users.every((user) => user.email.includes('@'))).toBe(true);
     });
 
     it('should handle malformed JSON gracefully', async () => {
@@ -406,7 +406,7 @@ describe('Authentication API', () => {
       });
 
       // All tokens should be valid but different
-      const tokens = responses.map((r: any) => r.body.token);
+      const tokens = responses.map((r: { body: { token: string } }) => r.body.token);
       const uniqueTokens = new Set(tokens);
       expect(uniqueTokens.size).toBe(tokens.length); // All tokens should be unique
     });

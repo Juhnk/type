@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import supertest from 'supertest';
+import type { Response } from 'supertest';
 import { 
   createTestApp, 
   createTestUser, 
@@ -340,8 +341,8 @@ describe('Error Handling and Edge Cases', () => {
       const responses = await Promise.all(registrations);
 
       // Only one should succeed, others should fail with 409
-      const successCount = responses.filter(r => r.status === 201).length;
-      const conflictCount = responses.filter(r => r.status === 409).length;
+      const successCount = responses.filter((r: Response) => r.status === 201).length;
+      const conflictCount = responses.filter((r: Response) => r.status === 409).length;
 
       expect(successCount).toBe(1);
       expect(conflictCount).toBe(4);
