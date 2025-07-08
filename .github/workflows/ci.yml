@@ -28,7 +28,6 @@ env:
   NEXT_TELEMETRY_DISABLED: 1
   # Cache versions
   CACHE_VERSION: v1
-  DEPENDENCY_CACHE_KEY: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
 
 jobs:
   # Quick feedback loop (< 5 minutes)
@@ -269,7 +268,7 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
-          key: ${{ env.DEPENDENCY_CACHE_KEY }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
 
       - name: Install dependencies if needed
         run: |
@@ -344,7 +343,7 @@ jobs:
             node_modules
             packages/*/node_modules
             ~/.cache/ms-playwright
-          key: ${{ env.DEPENDENCY_CACHE_KEY }}-playwright-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-playwright-${{ hashFiles('**/package-lock.json') }}
 
       - name: Install dependencies
         run: |
@@ -409,7 +408,7 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
-          key: ${{ env.DEPENDENCY_CACHE_KEY }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
 
       - name: Cache Next.js build
         uses: actions/cache@v4
