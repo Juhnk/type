@@ -82,8 +82,10 @@ test.describe('TypeAmp E2E - Timer Functionality', () => {
     // Stop typing (blur)
     await page.keyboard.press('Escape');
 
-    // Check results appear
-    await expect(page.locator('text=/Results/', 'text=/Stats/')).toBeVisible({
+    // Check results appear - look for either Results or Stats text
+    await expect(
+      page.locator('text=/Results/').or(page.locator('text=/Stats/'))
+    ).toBeVisible({
       timeout: 10000,
     });
   });

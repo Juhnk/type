@@ -109,20 +109,20 @@ describe('Words Mode Integration', () => {
       wordsCompleted: 9,
       wordsProgress: 90,
       userInput: 'the quick brown fox jumps over the lazy dog',
-      charStates: Array(44)
-        .fill(null)
-        .map((_, i) => ({
-          char: useGameStore.getState().textToType[i],
-          status: 'correct' as const,
-        }))
-        .concat(
-          Array(3)
-            .fill(null)
-            .map((_, i) => ({
-              char: useGameStore.getState().textToType[44 + i],
-              status: 'default' as const,
-            }))
-        ),
+      charStates: [
+        ...Array(44)
+          .fill(null)
+          .map((_, i) => ({
+            char: useGameStore.getState().textToType[i],
+            status: 'correct' as const,
+          })),
+        ...Array(3)
+          .fill(null)
+          .map((_, i) => ({
+            char: useGameStore.getState().textToType[44 + i],
+            status: 'default' as const,
+          })),
+      ],
     });
 
     // Type the last word

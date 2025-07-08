@@ -90,7 +90,7 @@ describe('Words Mode functionality', () => {
       const text = 'hello world test';
       const charStates = text.split('').map((char, i) => ({
         char,
-        status: (i <= 5 ? 'correct' : 'default') as const,
+        status: i <= 5 ? ('correct' as const) : ('default' as const),
       }));
 
       useGameStore.setState({
@@ -112,11 +112,12 @@ describe('Words Mode functionality', () => {
       const text = 'hello world test';
       const charStates = text.split('').map((char, i) => ({
         char,
-        status: (i < 5
-          ? i === 2
-            ? 'incorrect'
-            : 'correct'
-          : 'default') as const,
+        status:
+          i < 5
+            ? i === 2
+              ? ('incorrect' as const)
+              : ('correct' as const)
+            : ('default' as const),
       }));
 
       useGameStore.setState({
