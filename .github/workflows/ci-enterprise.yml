@@ -124,12 +124,14 @@ jobs:
 
       - name: Upload quick check results
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: quick-check-results
           path: |
             lint-results.json
             type-check-results.json
           retention-days: 7
+          if-no-files-found: ignore
 
   # Security analysis (< 10 minutes)
   security-analysis:
@@ -212,12 +214,14 @@ jobs:
 
       - name: Upload security results
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: security-results
           path: |
             npm-audit.json
             dependency-check-report.html
           retention-days: 30
+          if-no-files-found: ignore
 
   # Comprehensive testing with optimization
   test-matrix:
@@ -384,6 +388,7 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 30
+          if-no-files-found: ignore
 
   # Build optimization
   build-artifacts:
