@@ -1,6 +1,6 @@
 import { getTestHistory, clearTestHistory, type TestResult } from './history';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3003';
 
 interface AuthResponse {
   user: {
@@ -49,6 +49,36 @@ interface WordListsResponse {
     description: string;
     total_words: number;
   }>;
+}
+
+interface SettingsResponse {
+  // Appearance
+  theme: string;
+  font: string;
+  fontSize: number;
+  caretStyle: string;
+  caretColor: string;
+  colorScheme: string;
+  animations: boolean;
+  smoothCaret: boolean;
+  showWpmCounter: boolean;
+  showAccuracyCounter: boolean;
+  // Behavior
+  soundEffects: boolean;
+  keyFeedback: boolean;
+  defaultMode: string;
+  defaultDifficulty: string;
+  defaultDuration: number;
+  defaultWordCount: number;
+  paceCaretWpm: number;
+  paceCaretEnabled: boolean;
+  autoSave: boolean;
+  focusMode: boolean;
+  quickRestart: boolean;
+  blindMode: boolean;
+  // Timestamps
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 class ApiClient {
@@ -267,6 +297,37 @@ class ApiClient {
   getWordLists = async (): Promise<WordListsResponse> => {
     return this.makeRequest<WordListsResponse>('/api/words/lists');
   };
+
+  // Settings API methods
+  getSettings = async (token: string): Promise<SettingsResponse> => {
+    return this.makeRequest<SettingsResponse>('/api/me/settings', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  };
+
+  updateSettings = async (
+    settings: Partial<SettingsResponse>,
+    token: string
+  ): Promise<SettingsResponse> => {
+    return this.makeRequest<SettingsResponse>('/api/me/settings', {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(settings),
+    });
+  };
+
+  resetSettings = async (token: string): Promise<{ message: string }> => {
+    return this.makeRequest<{ message: string }>('/api/me/settings', {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  };
 }
 
 export const apiClient = new ApiClient();
@@ -280,6 +341,9 @@ export const {
   saveSingleTest,
   getWords,
   getWordLists,
+  getSettings,
+  updateSettings,
+  resetSettings,
 } = apiClient;
 
 // SWR fetcher function for authenticated GET requests

@@ -27,7 +27,7 @@ export function middleware(request: NextRequest) {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https: blob:",
     "font-src 'self'",
-    "connect-src 'self' *.supabase.co *.sentry.io vitals.vercel-insights.com *.google-analytics.com",
+    "connect-src 'self' localhost:8081 http://localhost:8081 *.supabase.co *.sentry.io vitals.vercel-insights.com *.google-analytics.com",
     "media-src 'self'",
     "object-src 'none'",
     "frame-ancestors 'none'",
