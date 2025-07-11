@@ -1,8 +1,8 @@
 {
   "store/useSettingsStore.ts -> @/lib/api-client": {
-    "id": 39879,
+    "id": "store/useSettingsStore.ts -> @/lib/api-client",
     "files": [
-      "static/chunks/879.7f4c2c2f7f0c0f35.js"
+      "static/chunks/_app-pages-browser_src_lib_api-client_ts.js"
     ]
   }
 }

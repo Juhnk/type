@@ -28,7 +28,7 @@ export function LoadingState({
         return (
           <BookOpen
             className={cn(
-              'animate-pulse text-blue-500',
+              'text-info animate-pulse',
               isMobile ? 'h-6 w-6' : 'h-8 w-8'
             )}
           />
@@ -37,7 +37,7 @@ export function LoadingState({
         return (
           <Zap
             className={cn(
-              'animate-pulse text-green-500',
+              'text-success animate-pulse',
               isMobile ? 'h-6 w-6' : 'h-8 w-8'
             )}
           />
@@ -46,7 +46,7 @@ export function LoadingState({
         return (
           <Clock
             className={cn(
-              'animate-spin text-orange-500',
+              'text-warning animate-spin',
               isMobile ? 'h-6 w-6' : 'h-8 w-8'
             )}
           />
@@ -115,7 +115,7 @@ export function LoadingState({
       {/* Progress Bar (if enabled) */}
       {showProgress && (
         <div className="w-full max-w-xs">
-          <div className="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-700">
+          <div className="bg-muted h-2 w-full rounded-full">
             <div
               className="bg-primary h-2 rounded-full transition-all duration-300 ease-out"
               style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
@@ -147,7 +147,7 @@ export function LoadingState({
       </div>
 
       {/* Pulse Animation for Visual Interest */}
-      <div className="flex space-x-1">
+      <div className="flex gap-1">
         {[0, 1, 2].map((i) => (
           <div
             key={i}

@@ -27,10 +27,8 @@ export function WordsProgress() {
         <span
           className={cn(
             'text-xs font-medium sm:text-sm',
-            isAlmostDone && 'text-green-600 dark:text-green-400',
-            isNearCompletion &&
-              !isAlmostDone &&
-              'text-blue-600 dark:text-blue-400'
+            isAlmostDone && 'text-success',
+            isNearCompletion && !isAlmostDone && 'text-info'
           )}
         >
           {wordsCompleted}/{targetWordCount} words
@@ -42,8 +40,8 @@ export function WordsProgress() {
           className={cn(
             'absolute inset-y-0 left-0 rounded-full transition-all duration-300 ease-out',
             'bg-primary',
-            isAlmostDone && 'bg-green-600 dark:bg-green-400',
-            isNearCompletion && !isAlmostDone && 'bg-blue-600 dark:bg-blue-400'
+            isAlmostDone && 'bg-success',
+            isNearCompletion && !isAlmostDone && 'bg-info'
           )}
           style={{ width: `${wordsProgress}%` }}
         >
@@ -101,8 +99,7 @@ export function CompactWordsProgress() {
       className={cn(
         'inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm',
         'border-muted-foreground/20',
-        isNearCompletion &&
-          'border-green-500/20 text-green-700 dark:text-green-400'
+        isNearCompletion && 'border-success/20 text-success'
       )}
     >
       <div className="bg-muted relative h-1.5 w-16 overflow-hidden rounded-full">
@@ -110,7 +107,7 @@ export function CompactWordsProgress() {
           className={cn(
             'absolute inset-y-0 left-0 rounded-full transition-all duration-300',
             'bg-primary',
-            isNearCompletion && 'bg-green-500'
+            isNearCompletion && 'bg-success'
           )}
           style={{ width: `${wordsProgress}%` }}
         />

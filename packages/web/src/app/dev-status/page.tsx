@@ -51,14 +51,14 @@ export default function DevStatusPage() {
     },
     {
       name: 'Backend API',
-      url: 'http://localhost:8080/health',
+      url: 'http://localhost:8081/health',
       status: 'unknown',
       lastChecked: 'Never',
       icon: <Server className="h-4 w-4" />,
     },
     {
       name: 'Database',
-      url: 'http://localhost:8080/api/status',
+      url: 'http://localhost:8081/api/status',
       status: 'unknown',
       lastChecked: 'Never',
       icon: <Database className="h-4 w-4" />,
@@ -319,7 +319,7 @@ export default function DevStatusPage() {
           <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-4">
             <Button variant="outline" size="sm" asChild>
               <a
-                href="http://localhost:8080/health"
+                href="http://localhost:8081/health"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -328,7 +328,7 @@ export default function DevStatusPage() {
             </Button>
             <Button variant="outline" size="sm" asChild>
               <a
-                href="http://localhost:8080/api/words/english1k"
+                href="http://localhost:8081/api/words/english1k"
                 target="_blank"
                 rel="noopener noreferrer"
               >

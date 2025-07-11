@@ -137,9 +137,8 @@ export function EnhancedTypingArea() {
           key={index}
           className={cn(
             'relative',
-            isTyped && isCorrect && 'text-green-600 dark:text-green-400',
-            hasError &&
-              'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400',
+            isTyped && isCorrect && 'text-success',
+            hasError && 'bg-error-soft text-error',
             isCurrent && 'text-foreground',
             !isTyped && !isCurrent && 'text-muted-foreground/60'
           )}

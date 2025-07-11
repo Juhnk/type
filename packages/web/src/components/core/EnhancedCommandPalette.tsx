@@ -12,6 +12,7 @@ import {
   CommandShortcut,
 } from '@/components/ui/command';
 import { useGameStore } from '@/store/useGameStore';
+import { useSettingsStore } from '@/store/useSettingsStore';
 import {
   Check,
   Clock,
@@ -27,6 +28,8 @@ import {
   Timer,
   Settings,
   Sparkles,
+  Palette,
+  Type,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -61,6 +64,11 @@ export function EnhancedCommandPalette() {
       punctuation: currentPunctuation,
     },
   } = useGameStore();
+
+  // Settings store for theme and caret management
+  const { settings, updateTheme, updateCaretStyle } = useSettingsStore();
+  const currentTheme = settings.appearance.theme;
+  const currentCaretStyle = settings.appearance.caretStyle;
 
   // Recent configurations (stored in localStorage)
   const [recentConfigs, setRecentConfigs] = useState<
@@ -143,20 +151,63 @@ export function EnhancedCommandPalette() {
           return;
         }
 
-        // Number shortcuts for time mode
-        if (currentMode === 'time' && !e.ctrlKey && !e.metaKey && !e.altKey) {
-          const durationMap: Record<string, number> = {
-            '1': 15,
-            '2': 30,
-            '3': 60,
-            '4': 120,
+        // Number shortcuts
+        if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+          // Time mode shortcuts (1-4)
+          if (currentMode === 'time') {
+            const durationMap: Record<string, number> = {
+              '1': 15,
+              '2': 30,
+              '3': 60,
+              '4': 120,
+            };
+
+            if (durationMap[e.key]) {
+              e.preventDefault();
+              handleCommand(() =>
+                setTestConfig({ duration: durationMap[e.key] })
+              );
+              return;
+            }
+          }
+
+          // Theme shortcuts (5-0)
+          const themeMap: Record<string, string> = {
+            '5': 'slate',
+            '6': 'dark',
+            '7': 'nord',
+            '8': 'dracula',
+            '9': 'monokai',
+            '0': 'ocean',
           };
 
-          if (durationMap[e.key]) {
+          if (themeMap[e.key]) {
             e.preventDefault();
-            handleCommand(() =>
-              setTestConfig({ duration: durationMap[e.key] })
+            handleCommand(
+              () => updateTheme(themeMap[e.key]),
+              true,
+              `${themeMap[e.key].charAt(0).toUpperCase() + themeMap[e.key].slice(1)} theme activated`
             );
+            return;
+          }
+        }
+
+        // Alt + number shortcuts for caret styles
+        if (e.altKey && !e.ctrlKey && !e.metaKey) {
+          const caretMap: Record<string, 'line' | 'block' | 'underline'> = {
+            '1': 'line',
+            '2': 'block',
+            '3': 'underline',
+          };
+
+          if (caretMap[e.key]) {
+            e.preventDefault();
+            handleCommand(
+              () => updateCaretStyle(caretMap[e.key]),
+              true,
+              `${caretMap[e.key].charAt(0).toUpperCase() + caretMap[e.key].slice(1)} caret activated`
+            );
+            return;
           }
         }
 
@@ -210,6 +261,8 @@ export function EnhancedCommandPalette() {
     handleCommand,
     resetGame,
     setTestConfig,
+    updateTheme,
+    updateCaretStyle,
   ]);
 
   // Command configurations
@@ -394,6 +447,93 @@ export function EnhancedCommandPalette() {
       },
     ];
 
+    const themeCommands: CommandConfig[] = [
+      {
+        id: 'theme-slate',
+        label: 'Slate Theme',
+        icon: <Palette className="h-4 w-4" />,
+        shortcut: '5',
+        action: () => updateTheme('slate'),
+        isActive: currentTheme === 'slate',
+        description: 'Clean and modern default theme',
+      },
+      {
+        id: 'theme-dark',
+        label: 'Dark Theme',
+        icon: <Palette className="h-4 w-4" />,
+        shortcut: '6',
+        action: () => updateTheme('dark'),
+        isActive: currentTheme === 'dark',
+        description: 'Pure black and white theme',
+      },
+      {
+        id: 'theme-nord',
+        label: 'Nord Theme',
+        icon: <Palette className="h-4 w-4" />,
+        shortcut: '7',
+        action: () => updateTheme('nord'),
+        isActive: currentTheme === 'nord',
+        description: 'Arctic, north-bluish color palette',
+      },
+      {
+        id: 'theme-dracula',
+        label: 'Dracula Theme',
+        icon: <Palette className="h-4 w-4" />,
+        shortcut: '8',
+        action: () => updateTheme('dracula'),
+        isActive: currentTheme === 'dracula',
+        description: 'Dark theme with vibrant colors',
+      },
+      {
+        id: 'theme-monokai',
+        label: 'Monokai Theme',
+        icon: <Palette className="h-4 w-4" />,
+        shortcut: '9',
+        action: () => updateTheme('monokai'),
+        isActive: currentTheme === 'monokai',
+        description: 'Inspired by classic code editors',
+      },
+      {
+        id: 'theme-ocean',
+        label: 'Ocean Theme',
+        icon: <Palette className="h-4 w-4" />,
+        shortcut: '0',
+        action: () => updateTheme('ocean'),
+        isActive: currentTheme === 'ocean',
+        description: 'Deep blue oceanic colors',
+      },
+    ];
+
+    const caretCommands: CommandConfig[] = [
+      {
+        id: 'caret-line',
+        label: 'Line Caret',
+        icon: <Type className="h-4 w-4" />,
+        shortcut: 'Alt+1',
+        action: () => updateCaretStyle('line'),
+        isActive: currentCaretStyle === 'line',
+        description: 'Thin vertical line cursor |',
+      },
+      {
+        id: 'caret-block',
+        label: 'Block Caret',
+        icon: <Type className="h-4 w-4" />,
+        shortcut: 'Alt+2',
+        action: () => updateCaretStyle('block'),
+        isActive: currentCaretStyle === 'block',
+        description: 'Solid block cursor ▮',
+      },
+      {
+        id: 'caret-underline',
+        label: 'Underline Caret',
+        icon: <Type className="h-4 w-4" />,
+        shortcut: 'Alt+3',
+        action: () => updateCaretStyle('underline'),
+        isActive: currentCaretStyle === 'underline',
+        description: 'Underline cursor _',
+      },
+    ];
+
     return {
       modeCommands,
       durationCommands,
@@ -401,6 +541,8 @@ export function EnhancedCommandPalette() {
       difficultyCommands,
       wordListCommands,
       modifierCommands,
+      themeCommands,
+      caretCommands,
     };
   }, [
     currentMode,
@@ -409,7 +551,11 @@ export function EnhancedCommandPalette() {
     currentDifficulty,
     currentTextSource,
     currentPunctuation,
+    currentTheme,
+    currentCaretStyle,
     setTestConfig,
+    updateTheme,
+    updateCaretStyle,
   ]);
 
   // Filter commands based on search
@@ -588,6 +734,24 @@ export function EnhancedCommandPalette() {
           {/* Modifiers */}
           <CommandGroup heading="Modifiers">
             {filterCommands(commands.modifierCommands, search).map(
+              renderCommandItem
+            )}
+          </CommandGroup>
+
+          <CommandSeparator />
+
+          {/* Themes */}
+          <CommandGroup heading="Themes">
+            {filterCommands(commands.themeCommands, search).map(
+              renderCommandItem
+            )}
+          </CommandGroup>
+
+          <CommandSeparator />
+
+          {/* Caret Styles */}
+          <CommandGroup heading="Caret Styles">
+            {filterCommands(commands.caretCommands, search).map(
               renderCommandItem
             )}
           </CommandGroup>

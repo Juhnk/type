@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useGameStore } from '@/store/useGameStore';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
 export function ConfigurationBar() {
@@ -78,29 +79,21 @@ export function ConfigurationBar() {
   };
 
   return (
-    <div className="bg-card flex flex-wrap items-center gap-3 rounded-lg border p-4">
+    <div className="bg-card flex flex-wrap items-center gap-3 rounded-lg border p-4 shadow-sm">
       <div className="flex items-center gap-2">
         <span className="text-muted-foreground text-sm font-medium">Mode:</span>
-        <Badge
-          variant="secondary"
-          className="hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors"
-          onClick={handleModeChange}
-        >
+        <Button variant="outline" size="sm" onClick={handleModeChange}>
           {mode.charAt(0).toUpperCase() + mode.slice(1)}
-        </Badge>
+        </Button>
       </div>
 
       <div className="flex items-center gap-2">
         <span className="text-muted-foreground text-sm font-medium">
           Difficulty:
         </span>
-        <Badge
-          variant="secondary"
-          className="hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors"
-          onClick={handleDifficultyChange}
-        >
+        <Button variant="outline" size="sm" onClick={handleDifficultyChange}>
           {difficulty}
-        </Badge>
+        </Button>
       </div>
 
       {mode === 'time' && (
@@ -108,13 +101,9 @@ export function ConfigurationBar() {
           <span className="text-muted-foreground text-sm font-medium">
             Duration:
           </span>
-          <Badge
-            variant="secondary"
-            className="hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors"
-            onClick={handleDurationChange}
-          >
+          <Button variant="outline" size="sm" onClick={handleDurationChange}>
             {duration}s
-          </Badge>
+          </Button>
         </div>
       )}
 
@@ -123,13 +112,9 @@ export function ConfigurationBar() {
           <span className="text-muted-foreground text-sm font-medium">
             Word Count:
           </span>
-          <Badge
-            variant="secondary"
-            className="hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors"
-            onClick={handleWordCountChange}
-          >
+          <Button variant="outline" size="sm" onClick={handleWordCountChange}>
             {wordCount} words
-          </Badge>
+          </Button>
         </div>
       )}
 
@@ -137,23 +122,19 @@ export function ConfigurationBar() {
         <span className="text-muted-foreground text-sm font-medium">
           Word List:
         </span>
-        <Badge
-          variant="secondary"
-          className="hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors"
-          onClick={handleTextSourceChange}
-        >
+        <Button variant="outline" size="sm" onClick={handleTextSourceChange}>
           {getTextSourceDisplay(textSource)}
-        </Badge>
+        </Button>
       </div>
 
       <div className="flex items-center gap-2">
-        <Badge
+        <Button
           variant={punctuation ? 'default' : 'outline'}
-          className="hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors"
+          size="sm"
           onClick={handlePunctuationToggle}
         >
           Punctuation
-        </Badge>
+        </Button>
       </div>
 
       {mode === 'quote' && customText && (
@@ -163,7 +144,7 @@ export function ConfigurationBar() {
           </span>
           <Badge
             variant="outline"
-            className="hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors"
+            className="hover:bg-primary hover:text-primary-foreground transition-base cursor-pointer"
           >
             {customText.length > 20
               ? `${customText.substring(0, 20)}...`

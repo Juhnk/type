@@ -20,9 +20,9 @@ export function LiveStats() {
           className={cn(
             'font-mono text-xl font-bold sm:text-2xl',
             stats.wpm >= 60
-              ? 'text-green-600 dark:text-green-400'
+              ? 'text-success'
               : stats.wpm >= 40
-                ? 'text-blue-600 dark:text-blue-400'
+                ? 'text-primary'
                 : 'text-foreground'
           )}
         >
@@ -39,10 +39,10 @@ export function LiveStats() {
           className={cn(
             'font-mono text-xl font-bold sm:text-2xl',
             stats.accuracy >= 95
-              ? 'text-green-600 dark:text-green-400'
+              ? 'text-success'
               : stats.accuracy >= 90
-                ? 'text-yellow-600 dark:text-yellow-400'
-                : 'text-red-600 dark:text-red-400'
+                ? 'text-warning'
+                : 'text-error'
           )}
         >
           {stats.accuracy}%

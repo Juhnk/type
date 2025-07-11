@@ -15,6 +15,17 @@ import {
 } from '@/hooks/useDeviceDetection';
 import { cn } from '@/lib/utils';
 
+// Helper function to calculate current word boundaries
+const getCurrentWordBounds = (
+  currentWordIndex: number,
+  wordBoundaries: number[],
+  textLength: number
+) => {
+  const start = wordBoundaries[currentWordIndex] || 0;
+  const end = wordBoundaries[currentWordIndex + 1] || textLength;
+  return { start, end };
+};
+
 export function TypingArea() {
   // Use timer cleanup hooks
   useTimerCleanup();
@@ -71,9 +82,9 @@ export function TypingArea() {
   const getCharClassName = (status: string) => {
     switch (status) {
       case 'correct':
-        return 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30';
+        return 'text-success bg-success-soft';
       case 'incorrect':
-        return 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30';
+        return 'text-error bg-error-soft';
       case 'current':
         return 'bg-primary text-primary-foreground animate-pulse border-l-2 border-primary';
       default:
@@ -94,6 +105,10 @@ export function TypingArea() {
   const TimeModePastedComponent = () => {
     const { lines, lineCharOffsets, scrollOffset } = textWindow;
 
+    // Get word tracking state
+    const currentWordIndex = useGameStore((state) => state.currentWordIndex);
+    const wordBoundaries = useGameStore((state) => state.wordBoundaries);
+
     // Simple, performant scrolling - no complex interpolation needed
     // The store handles the timing, we just smoothly animate the transition
 
@@ -102,6 +117,13 @@ export function TypingArea() {
     const startIndex = Math.max(0, scrollOffset - renderBuffer);
     const endIndex = Math.min(lines.length, scrollOffset + 3 + renderBuffer);
     const linesToRender = lines.slice(startIndex, endIndex);
+
+    // Calculate current word boundaries
+    const { start: wordStart, end: wordEnd } = getCurrentWordBounds(
+      currentWordIndex,
+      wordBoundaries,
+      charStates.length
+    );
 
     // Memoize the line rendering for performance
     const renderLineWithCharacterStates = React.useMemo(() => {
@@ -115,19 +137,26 @@ export function TypingArea() {
 
           if (!charState) return null;
 
+          const isInCurrentWord =
+            globalCharIndex >= wordStart &&
+            globalCharIndex < wordEnd &&
+            char !== ' ';
+
           return (
             <span
               key={`${globalLineIndex}-${charIndex}`}
-              className={`transition-colors duration-150 ${getCharClassName(
-                charState.status
-              )}`}
+              className={cn(
+                'transition-colors duration-150',
+                getCharClassName(charState.status),
+                isInCurrentWord && 'bg-primary/10 dark:bg-primary/15'
+              )}
             >
               {char === ' ' ? '\u00A0' : char}
             </span>
           );
         });
       };
-    }, [lineCharOffsets, startIndex]);
+    }, [lineCharOffsets, startIndex, charStates, wordStart, wordEnd]);
 
     return (
       <div className="typing-container relative">
@@ -173,7 +202,7 @@ export function TypingArea() {
 
         {/* Content streaming indicator */}
         {useGameStore((state) => state.isContentStreaming) && (
-          <div className="absolute top-0 right-0 animate-pulse text-xs text-blue-600 dark:text-blue-400">
+          <div className="text-info absolute top-0 right-0 animate-pulse text-xs">
             Loading more content...
           </div>
         )}
@@ -185,7 +214,7 @@ export function TypingArea() {
         )}
 
         {gameStatus === 'paused' && (
-          <p className="mt-6 text-center text-sm font-medium text-orange-600 dark:text-orange-400">
+          <p className="text-warning mt-6 text-center text-sm font-medium">
             Test paused - continue typing to resume
           </p>
         )}
@@ -195,6 +224,17 @@ export function TypingArea() {
 
   // Standard display for words and quote modes
   const StandardTypingDisplay = () => {
+    // Get word tracking state
+    const currentWordIndex = useGameStore((state) => state.currentWordIndex);
+    const wordBoundaries = useGameStore((state) => state.wordBoundaries);
+
+    // Calculate current word boundaries
+    const { start, end } = getCurrentWordBounds(
+      currentWordIndex,
+      wordBoundaries,
+      charStates.length
+    );
+
     return (
       <div className="typing-container relative">
         <div
@@ -210,19 +250,28 @@ export function TypingArea() {
           aria-describedby="typing-instructions game-status-live"
           tabIndex={0}
         >
-          {charStates.map((charState, index) => (
-            <span
-              key={index}
-              className={`transition-colors duration-150 ${getCharClassName(
-                charState.status
-              )}`}
-              aria-label={
-                charState.status === 'current' ? 'Current character' : undefined
-              }
-            >
-              {charState.char === ' ' ? '\u00A0' : charState.char}
-            </span>
-          ))}
+          {charStates.map((charState, index) => {
+            const isInCurrentWord =
+              index >= start && index < end && charState.char !== ' ';
+
+            return (
+              <span
+                key={index}
+                className={cn(
+                  'transition-colors duration-150',
+                  getCharClassName(charState.status),
+                  isInCurrentWord && 'bg-primary/10 dark:bg-primary/15'
+                )}
+                aria-label={
+                  charState.status === 'current'
+                    ? 'Current character'
+                    : undefined
+                }
+              >
+                {charState.char === ' ' ? '\u00A0' : charState.char}
+              </span>
+            );
+          })}
         </div>
 
         {gameStatus === 'ready' && (
@@ -232,7 +281,7 @@ export function TypingArea() {
         )}
 
         {gameStatus === 'paused' && (
-          <p className="mt-6 text-center text-sm font-medium text-orange-600 dark:text-orange-400">
+          <p className="text-warning mt-6 text-center text-sm font-medium">
             Test paused - continue typing to resume
           </p>
         )}

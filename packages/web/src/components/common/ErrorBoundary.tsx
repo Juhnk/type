@@ -92,10 +92,10 @@ export class ErrorBoundary extends Component<Props, State> {
         <div className="bg-background flex min-h-screen items-center justify-center p-4">
           <Card className="w-full max-w-lg">
             <CardHeader className="text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
-                <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
+              <div className="bg-error/10 mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full">
+                <AlertTriangle className="text-error h-6 w-6" />
               </div>
-              <CardTitle className="text-xl font-semibold">
+              <CardTitle className="text-heading-sm">
                 Oops! Something went wrong
               </CardTitle>
               <CardDescription>
@@ -107,11 +107,11 @@ export class ErrorBoundary extends Component<Props, State> {
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <CardContent>
                 <details className="mt-4">
-                  <summary className="text-muted-foreground hover:text-foreground cursor-pointer text-sm font-medium">
+                  <summary className="text-muted-foreground hover:text-foreground text-body-sm cursor-pointer font-medium">
                     Error Details (Development Only)
                   </summary>
                   <div className="bg-muted mt-2 rounded-md p-3 font-mono text-xs">
-                    <div className="font-semibold text-red-600 dark:text-red-400">
+                    <div className="text-error font-semibold">
                       {this.state.error.name}: {this.state.error.message}
                     </div>
                     <pre className="text-muted-foreground mt-2 whitespace-pre-wrap">
@@ -147,7 +147,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
             {this.state.errorId && (
               <div className="px-6 pb-6">
-                <p className="text-muted-foreground text-center text-xs">
+                <p className="text-muted-foreground text-body-xs text-center">
                   Error ID: <code>{this.state.errorId}</code>
                 </p>
               </div>

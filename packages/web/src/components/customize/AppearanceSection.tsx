@@ -48,12 +48,12 @@ const fonts = [
 ];
 
 const caretColors = [
-  { value: '#3b82f6', label: 'Blue' },
-  { value: '#10b981', label: 'Green' },
-  { value: '#f59e0b', label: 'Amber' },
-  { value: '#ef4444', label: 'Red' },
-  { value: '#8b5cf6', label: 'Purple' },
-  { value: '#ec4899', label: 'Pink' },
+  { value: 'var(--primary)', label: 'Primary' },
+  { value: 'var(--color-success)', label: 'Success' },
+  { value: 'var(--color-warning)', label: 'Warning' },
+  { value: 'var(--color-error)', label: 'Error' },
+  { value: 'var(--accent)', label: 'Accent' },
+  { value: 'var(--muted-foreground)', label: 'Muted' },
 ];
 
 export function AppearanceSection() {
@@ -119,7 +119,7 @@ export function AppearanceSection() {
               onValueChange={updateColorScheme}
             >
               <div className="flex flex-col space-y-2 sm:flex-row sm:gap-4 sm:space-y-0">
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-2">
                   <RadioGroupItem value="light" id="light" />
                   <Label
                     htmlFor="light"
@@ -129,7 +129,7 @@ export function AppearanceSection() {
                     Light
                   </Label>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-2">
                   <RadioGroupItem value="dark" id="dark" />
                   <Label
                     htmlFor="dark"
@@ -139,7 +139,7 @@ export function AppearanceSection() {
                     Dark
                   </Label>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-2">
                   <RadioGroupItem value="auto" id="auto" />
                   <Label
                     htmlFor="auto"
@@ -214,19 +214,19 @@ export function AppearanceSection() {
               value={settings.caretStyle}
               onValueChange={updateCaretStyle}
             >
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <RadioGroupItem value="line" id="line" />
                 <Label htmlFor="line" className="cursor-pointer">
                   Line |
                 </Label>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <RadioGroupItem value="block" id="block" />
                 <Label htmlFor="block" className="cursor-pointer">
                   Block ▮
                 </Label>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <RadioGroupItem value="underline" id="underline" />
                 <Label htmlFor="underline" className="cursor-pointer">
                   Underline _

@@ -59,28 +59,28 @@ export function ResultsCard() {
   };
 
   const getAccuracyColor = () => {
-    if (accuracy >= 95) return 'text-green-600 dark:text-green-400';
-    if (accuracy >= 85) return 'text-yellow-600 dark:text-yellow-400';
-    return 'text-red-600 dark:text-red-400';
+    if (accuracy >= 95) return 'text-success';
+    if (accuracy >= 85) return 'text-warning';
+    return 'text-error';
   };
 
   return (
     <Card className="mx-auto w-full max-w-2xl">
       <CardHeader className="text-center">
-        <CardTitle className="flex items-center justify-center gap-2 text-2xl font-bold">
+        <CardTitle className="text-heading-base flex items-center justify-center gap-2">
           {testFailed ? (
-            <AlertTriangle className="h-6 w-6 text-red-500" />
+            <AlertTriangle className="text-error h-6 w-6" />
           ) : (
-            <Trophy className="h-6 w-6 text-yellow-500" />
+            <Trophy className="text-warning h-6 w-6" />
           )}
           {testFailed ? 'Test Failed!' : 'Test Complete!'}
         </CardTitle>
-        <CardDescription className="text-lg">
+        <CardDescription className="text-body-lg">
           {getPerformanceMessage()}
         </CardDescription>
         {testFailed && failureReason && (
-          <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
-            <p className="text-sm font-medium text-red-700 dark:text-red-300">
+          <div className="border-error/20 bg-error-soft mt-3 rounded-lg border p-3">
+            <p className="text-body-sm text-error font-medium">
               {failureReason}
             </p>
           </div>
@@ -92,7 +92,7 @@ export function ResultsCard() {
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-secondary/50 rounded-lg p-4 text-center">
             <div className="text-3xl font-bold">{wpm}</div>
-            <div className="text-muted-foreground text-sm font-medium">
+            <div className="text-muted-foreground text-body-sm font-medium">
               Words Per Minute
             </div>
           </div>
@@ -101,7 +101,7 @@ export function ResultsCard() {
             <div className={`text-3xl font-bold ${getAccuracyColor()}`}>
               {accuracy}%
             </div>
-            <div className="text-muted-foreground text-sm font-medium">
+            <div className="text-muted-foreground text-body-sm font-medium">
               Accuracy
             </div>
           </div>
@@ -109,7 +109,7 @@ export function ResultsCard() {
 
         {/* Detailed Stats */}
         <div className="space-y-3 pt-2">
-          <div className="flex items-center justify-between text-sm">
+          <div className="text-body-sm flex items-center justify-between">
             <span className="text-muted-foreground flex items-center gap-2">
               <Target className="h-4 w-4" />
               Characters Typed
@@ -117,27 +117,23 @@ export function ResultsCard() {
             <span className="font-medium">{totalChars}</span>
           </div>
 
-          <div className="flex items-center justify-between text-sm">
+          <div className="text-body-sm flex items-center justify-between">
             <span className="text-muted-foreground flex items-center gap-2">
-              <span className="text-green-600 dark:text-green-400">✓</span>
+              <span className="text-success">✓</span>
               Correct
             </span>
-            <span className="font-medium text-green-600 dark:text-green-400">
-              {correctChars}
-            </span>
+            <span className="text-success font-medium">{correctChars}</span>
           </div>
 
-          <div className="flex items-center justify-between text-sm">
+          <div className="text-body-sm flex items-center justify-between">
             <span className="text-muted-foreground flex items-center gap-2">
-              <span className="text-red-600 dark:text-red-400">✗</span>
+              <span className="text-error">✗</span>
               Incorrect
             </span>
-            <span className="font-medium text-red-600 dark:text-red-400">
-              {incorrectChars}
-            </span>
+            <span className="text-error font-medium">{incorrectChars}</span>
           </div>
 
-          <div className="flex items-center justify-between text-sm">
+          <div className="text-body-sm flex items-center justify-between">
             <span className="text-muted-foreground flex items-center gap-2">
               <Timer className="h-4 w-4" />
               Time Elapsed
@@ -151,7 +147,7 @@ export function ResultsCard() {
         {/* Contextual save button */}
         {token ? (
           <Button size="lg" variant="outline" className="flex-1" disabled>
-            <Check className="mr-2 h-4 w-4 text-green-600" />
+            <Check className="text-success me-2 h-4 w-4" />
             Saved!
           </Button>
         ) : (
@@ -161,7 +157,7 @@ export function ResultsCard() {
             variant="outline"
             className="flex-1"
           >
-            <Save className="mr-2 h-4 w-4" />
+            <Save className="me-2 h-4 w-4" />
             Save Score
           </Button>
         )}
@@ -172,7 +168,7 @@ export function ResultsCard() {
           size="lg"
           variant="default"
         >
-          <RotateCcw className="mr-2 h-4 w-4" />
+          <RotateCcw className="me-2 h-4 w-4" />
           Try Again
         </Button>
       </CardFooter>

@@ -25,15 +25,15 @@ export function PreviewSection() {
 
   // Get caret style classes
   const getCaretClasses = () => {
-    const baseClasses = 'absolute transition-all';
+    const baseClasses = 'absolute transition-base';
 
     switch (settings.caretStyle) {
       case 'line':
-        return `${baseClasses} w-0.5 h-full ${settings.smoothCaret ? 'transition-left duration-100' : ''}`;
+        return `${baseClasses} w-0.5 h-full ${settings.smoothCaret ? 'duration-fast' : 'duration-instant'}`;
       case 'block':
-        return `${baseClasses} w-[1ch] h-full opacity-50 ${settings.smoothCaret ? 'transition-left duration-100' : ''}`;
+        return `${baseClasses} w-[1ch] h-full opacity-50 ${settings.smoothCaret ? 'duration-fast' : 'duration-instant'}`;
       case 'underline':
-        return `${baseClasses} w-[1ch] h-0.5 bottom-0 ${settings.smoothCaret ? 'transition-left duration-100' : ''}`;
+        return `${baseClasses} w-[1ch] h-0.5 bottom-0 ${settings.smoothCaret ? 'duration-fast' : 'duration-instant'}`;
       default:
         return baseClasses;
     }

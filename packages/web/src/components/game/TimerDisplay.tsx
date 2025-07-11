@@ -45,10 +45,9 @@ export function TimerDisplay() {
             'text-foreground': gameStatus === 'running' && !isWarningTime,
 
             // Warning states
-            'text-orange-600 dark:text-orange-400': isWarningTime && !isLowTime,
-            'animate-pulse text-red-600 dark:text-red-400':
-              isLowTime && !isVeryLowTime,
-            'animate-bounce text-red-700 dark:text-red-300': isVeryLowTime,
+            'text-warning': isWarningTime && !isLowTime,
+            'text-error animate-pulse': isLowTime && !isVeryLowTime,
+            'text-error animate-bounce': isVeryLowTime,
 
             // Size based on urgency
             'text-4xl': isLowTime,
@@ -60,13 +59,13 @@ export function TimerDisplay() {
       </div>
 
       {/* Status indicator */}
-      <div className="ml-3 flex flex-col items-center">
+      <div className="ms-3 flex flex-col items-center">
         <div
-          className={cn('h-2 w-2 rounded-full transition-colors duration-200', {
-            'bg-gray-400': gameStatus === 'ready' || gameStatus === 'paused',
-            'animate-pulse bg-green-500':
+          className={cn('transition-base h-2 w-2 rounded-full', {
+            'bg-muted': gameStatus === 'ready' || gameStatus === 'paused',
+            'animate-pulse-subtle bg-success':
               gameStatus === 'running' && isTimerRunning,
-            'bg-red-500': gameStatus === 'finished',
+            'bg-error': gameStatus === 'finished',
           })}
         />
         <span className="text-muted-foreground mt-1 text-xs">
@@ -98,9 +97,9 @@ export function CompactTimerDisplay() {
         {
           'border-muted-foreground/20 text-muted-foreground':
             gameStatus !== 'running',
-          'border-green-500/20 text-green-700 dark:text-green-400':
+          'border-success/20 text-success':
             gameStatus === 'running' && !isLowTime,
-          'animate-pulse border-red-500/20 text-red-700 dark:text-red-400':
+          'border-error/20 text-error animate-pulse':
             gameStatus === 'running' && isLowTime,
         }
       )}
@@ -108,8 +107,8 @@ export function CompactTimerDisplay() {
       <div
         className={cn('h-1.5 w-1.5 rounded-full', {
           'bg-muted-foreground/40': gameStatus !== 'running',
-          'bg-green-500': gameStatus === 'running' && !isLowTime,
-          'bg-red-500': gameStatus === 'running' && isLowTime,
+          'bg-success': gameStatus === 'running' && !isLowTime,
+          'bg-error': gameStatus === 'running' && isLowTime,
         })}
       />
       {totalSeconds}s
