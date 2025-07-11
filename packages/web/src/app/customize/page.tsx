@@ -14,9 +14,7 @@ import { toast } from 'sonner';
 import { Palette, Activity, Sun, Moon, Monitor } from 'lucide-react';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { useAuthStore } from '@/store/useAuthStore';
-import { Caret } from '@/components/game/CaretComponents';
-
-const PREVIEW_TEXT = 'TypeAmp';
+import { CaretPreview } from '@/components/customize/CaretPreview';
 
 export default function CustomizePage() {
   const {
@@ -28,7 +26,6 @@ export default function CustomizePage() {
   } = useSettingsStore();
   const { token } = useAuthStore();
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [caretVisible, setCaretVisible] = useState(true);
 
   // Load settings from server on mount if authenticated
   useEffect(() => {
@@ -61,15 +58,6 @@ export default function CustomizePage() {
   useEffect(() => {
     setHasUnsavedChanges(true);
   }, [settings]);
-
-  // Caret blinking animation
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCaretVisible((prev) => !prev);
-    }, 530);
-
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8">
@@ -147,24 +135,7 @@ export default function CustomizePage() {
             {/* Live Preview */}
             <div className="space-y-2">
               <Label className="text-sm font-medium">Live Preview</Label>
-              <div
-                className="bg-muted/50 relative rounded-lg border p-4 font-mono"
-                style={{
-                  fontFamily: settings.appearance.font,
-                  fontSize: `${settings.appearance.fontSize}px`,
-                }}
-              >
-                <div className="relative leading-relaxed">
-                  <span className="text-foreground">
-                    {PREVIEW_TEXT}
-                    <Caret
-                      position={0}
-                      visible={caretVisible}
-                      className="!left-0"
-                    />
-                  </span>
-                </div>
-              </div>
+              <CaretPreview caretStyle={settings.appearance.caretStyle} />
             </div>
 
             {/* Caret Style Selection */}

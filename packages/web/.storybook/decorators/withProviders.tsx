@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Decorator } from '@storybook/react';
+import type { Decorator } from '@storybook/nextjs';
 import { AuthProvider } from '../../src/components/providers/AuthProvider';
 import { SettingsProvider } from '../../src/components/providers/SettingsProvider';
 

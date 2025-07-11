@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/nextjs';
 import { TypingArea } from '@/components/game/TypingArea';
 import { useGameStore } from '@/store/useGameStore';
 

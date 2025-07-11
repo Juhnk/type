@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/nextjs';
 import { AuthModal } from './AuthModal';
 
 const meta = {
@@ -49,9 +49,6 @@ export const OpenLoginTab: Story = {
       auth: {
         user: null,
         token: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: null,
       },
     },
     docs: {
@@ -73,9 +70,6 @@ export const OpenRegisterTab: Story = {
       auth: {
         user: null,
         token: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: null,
       },
     },
     docs: {
@@ -103,9 +97,6 @@ export const DarkMode: Story = {
       auth: {
         user: null,
         token: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: null,
       },
     },
     docs: {
@@ -130,9 +121,6 @@ export const MobileView: Story = {
       auth: {
         user: null,
         token: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: null,
       },
     },
     viewport: {
@@ -157,9 +145,6 @@ export const TabletView: Story = {
       auth: {
         user: null,
         token: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: null,
       },
     },
     viewport: {
@@ -183,9 +168,6 @@ export const WithValidationErrors: Story = {
       auth: {
         user: null,
         token: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: null,
       },
     },
     docs: {
@@ -270,9 +252,6 @@ export const Closed: Story = {
       auth: {
         user: null,
         token: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: null,
       },
     },
     docs: {
@@ -333,9 +312,6 @@ export const VisualRegressionTest: Story = {
       auth: {
         user: null,
         token: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: null,
       },
     },
     docs: {
@@ -409,9 +385,6 @@ export const BackdropDemo: Story = {
       auth: {
         user: null,
         token: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: null,
       },
     },
     docs: {
@@ -433,9 +406,6 @@ export const InteractiveTesting: Story = {
       auth: {
         user: null,
         token: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: null,
       },
     },
     docs: {
@@ -457,9 +427,6 @@ export const HighContrast: Story = {
       auth: {
         user: null,
         token: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: null,
       },
     },
     docs: {
@@ -483,9 +450,6 @@ export const NordTheme: Story = {
       auth: {
         user: null,
         token: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: null,
       },
     },
     docs: {
@@ -508,9 +472,6 @@ export const DraculaTheme: Story = {
       auth: {
         user: null,
         token: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: null,
       },
     },
     docs: {

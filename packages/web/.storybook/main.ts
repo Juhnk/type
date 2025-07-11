@@ -23,6 +23,8 @@ const config: StorybookConfig = {
       },
     },
     getAbsolutePath('@storybook/addon-onboarding'),
+    // Note: Additional addons like @storybook/addon-essentials, @storybook/addon-interactions,
+    // @storybook/addon-links, @storybook/addon-a11y need to be installed for full functionality
   ],
   framework: {
     name: getAbsolutePath('@storybook/nextjs'),
