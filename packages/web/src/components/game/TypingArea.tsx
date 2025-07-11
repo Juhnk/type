@@ -1,13 +1,15 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useGameStore } from '@/store/useGameStore';
+import { useSettingsStore } from '@/store/useSettingsStore';
 import { ResultsCard } from './ResultsCard';
 import { LoadingState } from './LoadingState';
 import { ErrorState } from './ErrorState';
 import { TimerDisplay } from './TimerDisplay';
 import { LiveStats } from './LiveStats';
 import { WordsProgress } from './WordsProgress';
+import { Caret, PaceCaret, usePaceCaretPosition } from './CaretComponents';
 import { useTimerCleanup, useTimerVisibility } from '@/hooks/useTimerCleanup';
 import {
   useDeviceDetection,
@@ -35,6 +37,16 @@ export function TypingArea() {
   const { isMobile, isTouchDevice } = useDeviceDetection();
   const hasVirtualKeyboard = useVirtualKeyboard();
 
+  // Settings from settings store
+  const settings = useSettingsStore((state) => state.settings);
+  const { font, fontSize, showWpmCounter, showAccuracyCounter } =
+    settings.appearance;
+  const { blindMode } = settings.behavior;
+
+  // Caret blinking state
+  const [caretVisible, setCaretVisible] = useState(true);
+  const paceCaretPosition = usePaceCaretPosition();
+
   // Use atomic selectors to prevent infinite loop and optimize performance
   const charStates = useGameStore((state) => state.charStates);
   const gameStatus = useGameStore((state) => state.gameStatus);
@@ -47,11 +59,21 @@ export function TypingArea() {
   );
   const prepareGame = useGameStore((state) => state.prepareGame);
   const useFallbackWords = useGameStore((state) => state.useFallbackWords);
+  const stats = useGameStore((state) => state.stats);
 
   // Prepare game on component mount
   useEffect(() => {
     prepareGame();
   }, [prepareGame]);
+
+  // Caret blinking effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCaretVisible((prev) => !prev);
+    }, 530);
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -79,16 +101,24 @@ export function TypingArea() {
     };
   }, [gameStatus, handleKeyPress]);
 
-  const getCharClassName = (status: string) => {
+  const getCharClassName = (
+    status: string,
+    isInCurrentWord: boolean = false
+  ) => {
+    const baseClasses = 'transition-colors duration-150';
+    const wordHighlight = isInCurrentWord
+      ? 'bg-primary/10 dark:bg-primary/15'
+      : '';
+
     switch (status) {
       case 'correct':
-        return 'text-success bg-success-soft';
+        return cn(baseClasses, 'text-success bg-success-soft', wordHighlight);
       case 'incorrect':
-        return 'text-error bg-error-soft';
+        return cn(baseClasses, 'text-error bg-error-soft', wordHighlight);
       case 'current':
-        return 'bg-primary text-primary-foreground animate-pulse border-l-2 border-primary';
+        return cn(baseClasses, 'text-foreground relative', wordHighlight);
       default:
-        return 'text-muted-foreground';
+        return cn(baseClasses, 'text-muted-foreground', wordHighlight);
     }
   };
 
@@ -142,21 +172,51 @@ export function TypingArea() {
             globalCharIndex < wordEnd &&
             char !== ' ';
 
+          const isCurrent = charState.status === 'current';
+          const displayChar =
+            blindMode && charState.status === 'correct'
+              ? '●'
+              : char === ' '
+                ? '\u00A0'
+                : char;
+
           return (
             <span
               key={`${globalLineIndex}-${charIndex}`}
               className={cn(
-                'transition-colors duration-150',
-                getCharClassName(charState.status),
-                isInCurrentWord && 'bg-primary/10 dark:bg-primary/15'
+                'relative',
+                getCharClassName(charState.status, isInCurrentWord)
               )}
             >
-              {char === ' ' ? '\u00A0' : char}
+              {displayChar}
+              {isCurrent && (
+                <Caret
+                  position={0}
+                  visible={caretVisible && gameStatus !== 'finished'}
+                  className="!left-0"
+                />
+              )}
+              {Math.floor(paceCaretPosition) === globalCharIndex && (
+                <PaceCaret
+                  position={0}
+                  visible={gameStatus === 'running'}
+                  className="!left-0"
+                />
+              )}
             </span>
           );
         });
       };
-    }, [lineCharOffsets, startIndex, charStates, wordStart, wordEnd]);
+    }, [
+      lineCharOffsets,
+      startIndex,
+      wordStart,
+      wordEnd,
+      blindMode,
+      caretVisible,
+      gameStatus,
+      paceCaretPosition,
+    ]);
 
     return (
       <div className="typing-container relative">
@@ -179,6 +239,8 @@ export function TypingArea() {
               isMobile ? 'text-base' : 'text-lg sm:text-xl'
             )}
             style={{
+              fontFamily: font,
+              fontSize: `${fontSize}px`,
               transform: `translateY(-${(scrollOffset - startIndex) * (isMobile ? 28 : 32)}px)`,
               transition: 'transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
               willChange: 'transform',
@@ -239,12 +301,16 @@ export function TypingArea() {
       <div className="typing-container relative">
         <div
           className={cn(
-            'w-full font-mono leading-relaxed tracking-wide break-words focus:outline-none',
+            'relative w-full font-mono leading-relaxed tracking-wide break-words focus:outline-none',
             // Responsive text size and spacing
             isMobile
               ? 'min-h-[150px] text-base'
               : 'min-h-[200px] text-lg sm:text-xl lg:text-2xl'
           )}
+          style={{
+            fontFamily: font,
+            fontSize: `${fontSize}px`,
+          }}
           role="textbox"
           aria-multiline="true"
           aria-describedby="typing-instructions game-status-live"
@@ -253,22 +319,38 @@ export function TypingArea() {
           {charStates.map((charState, index) => {
             const isInCurrentWord =
               index >= start && index < end && charState.char !== ' ';
+            const isCurrent = charState.status === 'current';
+            const displayChar =
+              blindMode && charState.status === 'correct'
+                ? '●'
+                : charState.char === ' '
+                  ? '\u00A0'
+                  : charState.char;
 
             return (
               <span
                 key={index}
                 className={cn(
-                  'transition-colors duration-150',
-                  getCharClassName(charState.status),
-                  isInCurrentWord && 'bg-primary/10 dark:bg-primary/15'
+                  'relative',
+                  getCharClassName(charState.status, isInCurrentWord)
                 )}
-                aria-label={
-                  charState.status === 'current'
-                    ? 'Current character'
-                    : undefined
-                }
+                aria-label={isCurrent ? 'Current character' : undefined}
               >
-                {charState.char === ' ' ? '\u00A0' : charState.char}
+                {displayChar}
+                {isCurrent && (
+                  <Caret
+                    position={0}
+                    visible={caretVisible && gameStatus !== 'finished'}
+                    className="!left-0"
+                  />
+                )}
+                {Math.floor(paceCaretPosition) === index && (
+                  <PaceCaret
+                    position={0}
+                    visible={gameStatus === 'running'}
+                    className="!left-0"
+                  />
+                )}
               </span>
             );
           })}
