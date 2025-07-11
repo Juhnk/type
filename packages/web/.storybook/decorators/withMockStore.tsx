@@ -3,6 +3,7 @@ import type { Decorator } from '@storybook/react';
 import { useGameStore } from '../../src/store/useGameStore';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { useSettingsStore } from '../../src/store/useSettingsStore';
+import { useModalStore } from '../../src/store/useModalStore';
 
 // Default mock states for stores
 const defaultGameState = {
@@ -75,6 +76,12 @@ const defaultSettingsState = {
   isLoading: false,
 };
 
+const defaultModalState = {
+  isAuthModalOpen: false,
+  openAuthModal: () => {},
+  closeAuthModal: () => {},
+};
+
 export const withMockStore: Decorator = (Story, context) => {
   // Reset stores to default state before each story
   React.useEffect(() => {
@@ -82,6 +89,7 @@ export const withMockStore: Decorator = (Story, context) => {
     const gameOverrides = context.parameters?.mockStore?.game || {};
     const authOverrides = context.parameters?.mockStore?.auth || {};
     const settingsOverrides = context.parameters?.mockStore?.settings || {};
+    const modalOverrides = context.parameters?.mockStore?.modal || {};
 
     useGameStore.setState({
       ...defaultGameState,
@@ -96,6 +104,11 @@ export const withMockStore: Decorator = (Story, context) => {
     useSettingsStore.setState({
       ...defaultSettingsState,
       ...settingsOverrides,
+    });
+
+    useModalStore.setState({
+      ...defaultModalState,
+      ...modalOverrides,
     });
   }, [context.parameters?.mockStore]);
 
