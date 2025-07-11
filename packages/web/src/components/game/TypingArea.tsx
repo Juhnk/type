@@ -39,8 +39,7 @@ export function TypingArea() {
 
   // Settings from settings store
   const settings = useSettingsStore((state) => state.settings);
-  const { font, fontSize, showWpmCounter, showAccuracyCounter } =
-    settings.appearance;
+  const { font, fontSize } = settings.appearance;
   const { blindMode } = settings.behavior;
 
   // Caret blinking state
@@ -59,7 +58,6 @@ export function TypingArea() {
   );
   const prepareGame = useGameStore((state) => state.prepareGame);
   const useFallbackWords = useGameStore((state) => state.useFallbackWords);
-  const stats = useGameStore((state) => state.stats);
 
   // Prepare game on component mount
   useEffect(() => {
