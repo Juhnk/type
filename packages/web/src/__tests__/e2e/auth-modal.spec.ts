@@ -232,8 +232,8 @@ test.describe('AuthModal E2E Tests', () => {
       return window.getComputedStyle(el);
     });
 
-    // Verify high z-index (should be 9999 from our fix)
-    expect(parseInt(modalStyles.zIndex)).toBeGreaterThanOrEqual(9999);
+    // Verify high z-index (should be 200 from our design system)
+    expect(parseInt(modalStyles.zIndex)).toBeGreaterThanOrEqual(200);
 
     // Check backdrop z-index
     const backdrop = page.locator('[data-slot="dialog-overlay"]');
@@ -241,8 +241,8 @@ test.describe('AuthModal E2E Tests', () => {
       return window.getComputedStyle(el);
     });
 
-    // Backdrop should also have high z-index
-    expect(parseInt(backdropStyles.zIndex)).toBeGreaterThanOrEqual(50);
+    // Backdrop should also have high z-index (100 from our design system)
+    expect(parseInt(backdropStyles.zIndex)).toBeGreaterThanOrEqual(100);
   });
 
   test('modal backdrop blocks interaction with background content', async ({
