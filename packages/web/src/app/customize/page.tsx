@@ -8,30 +8,27 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
-import { Download, Upload, RotateCcw, Palette, Settings2 } from 'lucide-react';
-import { AppearanceSection } from '@/components/customize/AppearanceSection';
-import { BehaviorSection } from '@/components/customize/BehaviorSection';
-import { PreviewSection } from '@/components/customize/PreviewSection';
+import { Palette, Activity, Sun, Moon, Monitor } from 'lucide-react';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { useAuthStore } from '@/store/useAuthStore';
+import { Caret } from '@/components/game/CaretComponents';
+
+const PREVIEW_TEXT = 'TypeAmp';
 
 export default function CustomizePage() {
-  const [activeTab, setActiveTab] = useState<'appearance' | 'behavior'>(
-    'appearance'
-  );
   const {
     settings,
-    resetToDefaults,
-    exportSettings,
-    importSettings,
+    updateColorScheme,
+    updateCaretStyle,
     saveToServer,
     loadFromServer,
   } = useSettingsStore();
   const { token } = useAuthStore();
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [caretVisible, setCaretVisible] = useState(true);
 
   // Load settings from server on mount if authenticated
   useEffect(() => {
@@ -65,147 +62,171 @@ export default function CustomizePage() {
     setHasUnsavedChanges(true);
   }, [settings]);
 
-  const handleExportSettings = () => {
-    const settingsData = exportSettings();
-    const blob = new Blob([JSON.stringify(settingsData, null, 2)], {
-      type: 'application/json',
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `typeamp-settings-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast.success('Settings exported successfully');
-  };
+  // Caret blinking animation
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCaretVisible((prev) => !prev);
+    }, 530);
 
-  const handleImportSettings = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        try {
-          const text = await file.text();
-          const settings = JSON.parse(text);
-          importSettings(settings);
-          toast.success('Settings imported successfully');
-        } catch {
-          toast.error(
-            'Failed to import settings. Please check the file format.'
-          );
-        }
-      }
-    };
-    input.click();
-  };
-
-  const handleResetToDefaults = () => {
-    if (confirm('Are you sure you want to reset all settings to defaults?')) {
-      resetToDefaults();
-      toast.success('Settings reset to defaults');
-    }
-  };
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div className="container mx-auto max-w-7xl px-4 py-8">
+    <div className="container mx-auto max-w-4xl px-4 py-8">
       <div className="mb-8">
         <h1 className="mb-2 text-4xl font-bold">Customize TypeAmp</h1>
         <p className="text-muted-foreground">
-          Personalize your typing experience with custom themes, fonts, and
-          behavior settings
+          Choose your theme and caret style for a personalized typing experience
         </p>
       </div>
 
-      {/* Preview Section */}
-      <div className="mb-6 lg:mb-8">
-        <PreviewSection />
-      </div>
-
-      {/* Settings Tabs */}
-      <div className="grid gap-4 lg:grid-cols-3 lg:gap-6">
-        <div className="order-2 lg:order-1 lg:col-span-2">
-          <Tabs
-            value={activeTab}
-            onValueChange={(v) => setActiveTab(v as 'appearance' | 'behavior')}
-          >
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger
-                value="appearance"
-                className="flex items-center gap-2"
-              >
-                <Palette className="h-4 w-4" />
-                Appearance
-              </TabsTrigger>
-              <TabsTrigger value="behavior" className="flex items-center gap-2">
-                <Settings2 className="h-4 w-4" />
-                Behavior
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="appearance" className="mt-6">
-              <AppearanceSection />
-            </TabsContent>
-
-            <TabsContent value="behavior" className="mt-6">
-              <BehaviorSection />
-            </TabsContent>
-          </Tabs>
-        </div>
-
-        {/* Actions Sidebar */}
-        <div className="order-1 lg:order-2 lg:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle>Settings Management</CardTitle>
-              <CardDescription>
-                Export, import, or reset your settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-                onClick={handleExportSettings}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Export Settings
-              </Button>
-
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-                onClick={handleImportSettings}
-              >
-                <Upload className="mr-2 h-4 w-4" />
-                Import Settings
-              </Button>
-
-              <div className="border-t pt-4">
-                <Button
-                  variant="destructive"
-                  className="w-full justify-start"
-                  onClick={handleResetToDefaults}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Theme Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Palette className="h-5 w-5" />
+              Theme
+            </CardTitle>
+            <CardDescription>
+              Select your preferred color scheme
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RadioGroup
+              value={settings.appearance.colorScheme}
+              onValueChange={updateColorScheme}
+              className="space-y-3"
+            >
+              <div className="flex items-center gap-3">
+                <RadioGroupItem value="light" id="light" />
+                <Label
+                  htmlFor="light"
+                  className="flex cursor-pointer items-center gap-2 font-medium"
                 >
-                  <RotateCcw className="mr-2 h-4 w-4" />
-                  Reset to Defaults
-                </Button>
+                  <Sun className="h-4 w-4" />
+                  Light
+                </Label>
               </div>
+              <div className="flex items-center gap-3">
+                <RadioGroupItem value="dark" id="dark" />
+                <Label
+                  htmlFor="dark"
+                  className="flex cursor-pointer items-center gap-2 font-medium"
+                >
+                  <Moon className="h-4 w-4" />
+                  Dark
+                </Label>
+              </div>
+              <div className="flex items-center gap-3">
+                <RadioGroupItem value="auto" id="auto" />
+                <Label
+                  htmlFor="auto"
+                  className="flex cursor-pointer items-center gap-2 font-medium"
+                >
+                  <Monitor className="h-4 w-4" />
+                  System
+                </Label>
+              </div>
+            </RadioGroup>
+          </CardContent>
+        </Card>
 
-              {!token && (
-                <div className="border-t pt-4">
-                  <p className="text-muted-foreground text-sm">
-                    Sign in to sync your settings across devices
-                  </p>
+        {/* Caret Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              Caret Style
+            </CardTitle>
+            <CardDescription>
+              Choose how your typing cursor appears
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Live Preview */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Live Preview</Label>
+              <div
+                className="bg-muted/50 relative rounded-lg border p-4 font-mono"
+                style={{
+                  fontFamily: settings.appearance.font,
+                  fontSize: `${settings.appearance.fontSize}px`,
+                }}
+              >
+                <div className="relative leading-relaxed">
+                  <span className="text-foreground">
+                    {PREVIEW_TEXT}
+                    <Caret
+                      position={0}
+                      visible={caretVisible}
+                      className="!left-0"
+                    />
+                  </span>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+              </div>
+            </div>
+
+            {/* Caret Style Selection */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Style</Label>
+              <RadioGroup
+                value={settings.appearance.caretStyle}
+                onValueChange={updateCaretStyle}
+                className="space-y-3"
+              >
+                <div className="flex items-center gap-3">
+                  <RadioGroupItem value="line" id="line" />
+                  <Label
+                    htmlFor="line"
+                    className="flex cursor-pointer items-center gap-2 font-medium"
+                  >
+                    <span className="font-mono">|</span>
+                    Line
+                  </Label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <RadioGroupItem value="block" id="block" />
+                  <Label
+                    htmlFor="block"
+                    className="flex cursor-pointer items-center gap-2 font-medium"
+                  >
+                    <span className="font-mono">▮</span>
+                    Block
+                  </Label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <RadioGroupItem value="underline" id="underline" />
+                  <Label
+                    htmlFor="underline"
+                    className="flex cursor-pointer items-center gap-2 font-medium"
+                  >
+                    <span className="font-mono">_</span>
+                    Underline
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Status indicator for authenticated users */}
+      {!token && (
+        <div className="mt-8 text-center">
+          <p className="text-muted-foreground text-sm">
+            Sign in to sync your settings across devices
+          </p>
+        </div>
+      )}
+
+      {token && hasUnsavedChanges && (
+        <div className="mt-8 text-center">
+          <p className="text-muted-foreground text-sm">
+            Settings will save automatically...
+          </p>
+        </div>
+      )}
     </div>
   );
 }
