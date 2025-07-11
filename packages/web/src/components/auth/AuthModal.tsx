@@ -123,7 +123,7 @@ export function AuthModal() {
 
   return (
     <Dialog open={isAuthModalOpen} onOpenChange={closeAuthModal}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="z-[9999] sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Welcome to TypeAmp</DialogTitle>
         </DialogHeader>
