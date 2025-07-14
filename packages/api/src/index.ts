@@ -1,12 +1,72 @@
+// Load environment variables before anything else
+import { config } from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Try loading .env from multiple possible locations
+const possiblePaths = [
+  join(__dirname, '../.env'),  // packages/api/.env
+  join(__dirname, '../../.env'), // packages/.env
+  join(__dirname, '../../../.env'), // root .env
+];
+
+let envLoaded = false;
+for (const envPath of possiblePaths) {
+  const result = config({ path: envPath });
+  if (!result.error) {
+    console.log(`[ENV] Successfully loaded environment variables from: ${envPath}`);
+    envLoaded = true;
+    break;
+  }
+}
+
+if (!envLoaded) {
+  console.error('[ENV] Warning: No .env file found in any expected location');
+}
+
+// Log critical environment variables (without exposing full values)
+console.log('[ENV] ANTHROPIC_API_KEY:', process.env.ANTHROPIC_API_KEY ? 
+  `${process.env.ANTHROPIC_API_KEY.substring(0, 20)}...` : 'NOT SET');
+
+// Validate critical environment variables
+const requiredEnvVars = {
+  'DATABASE_URL': process.env.DATABASE_URL,
+  'JWT_SECRET': process.env.JWT_SECRET,
+  'API_PORT': process.env.API_PORT,
+  'API_HOST': process.env.API_HOST
+};
+
+const missingVars = Object.entries(requiredEnvVars)
+  .filter(([name, value]) => !value)
+  .map(([name]) => name);
+
+if (missingVars.length > 0) {
+  console.error('[ENV] Missing required environment variables:', missingVars.join(', '));
+  console.error('[ENV] Please check your .env file');
+  process.exit(1);
+}
+
+// Warn about optional but important variables
+if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'your-anthropic-api-key-here') {
+  console.warn('[ENV] Warning: ANTHROPIC_API_KEY is not configured. AI features will be disabled.');
+}
+
+// Now import other modules after environment is loaded
 import Fastify from 'fastify';
 import { authRoutes } from './routes/auth.js';
 import { testRoutes } from './routes/tests.js';
 import { aiRoutes } from './routes/ai.js';
 import { wordsRoutes } from './routes/words.js';
 import { settingsRoutes } from './routes/settings.js';
+import quotesRoutes from './routes/quotes.js';
+import { SERVER_CONFIG, SECURITY_CONFIG } from './config/app.config.js';
 
 const fastify = Fastify({
-  logger: true
+  logger: true,
+  bodyLimit: 1048576 // 1MB limit for request body
 });
 
 const start = async () => {
@@ -26,7 +86,7 @@ const start = async () => {
         },
         servers: [
           {
-            url: 'http://localhost:8080',
+            url: SERVER_CONFIG.devServerUrl,
             description: 'Development server'
           },
           {
@@ -39,7 +99,8 @@ const start = async () => {
           { name: 'auth', description: 'Authentication operations' },
           { name: 'ai', description: 'AI-powered features' },
           { name: 'tests', description: 'Typing test operations' },
-          { name: 'settings', description: 'User settings and preferences' }
+          { name: 'settings', description: 'User settings and preferences' },
+          { name: 'quotes', description: 'Famous quotes operations' }
         ]
       }
     });
@@ -63,7 +124,7 @@ const start = async () => {
 
     // Register CORS plugin
     await fastify.register(import('@fastify/cors'), {
-      origin: ['http://localhost:3000', 'http://localhost:3002'], // Allow Next.js dev server ports
+      origin: SERVER_CONFIG.corsOrigins, // Allow configured origins
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization']
@@ -71,7 +132,7 @@ const start = async () => {
 
     // Register JWT plugin
     await fastify.register(import('@fastify/jwt'), {
-      secret: process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+      secret: SECURITY_CONFIG.jwtSecret
     });
 
     // Register routes
@@ -80,6 +141,7 @@ const start = async () => {
     await fastify.register(aiRoutes);
     await fastify.register(wordsRoutes);
     await fastify.register(settingsRoutes);
+    await fastify.register(quotesRoutes, { prefix: '/api/quotes' });
 
     // Health check routes
     fastify.get('/', async (request, reply) => {
@@ -90,9 +152,10 @@ const start = async () => {
       return { status: 'ok' };
     });
 
-    const port = process.env.API_PORT ? parseInt(process.env.API_PORT) : 8080;
-    await fastify.listen({ port, host: '0.0.0.0' });
-    console.log(`Server listening on http://localhost:${port}`);
+    const port = SERVER_CONFIG.port;
+    const host = SERVER_CONFIG.host;
+    await fastify.listen({ port, host });
+    fastify.log.info(`Server listening on http://${host}:${port}`);
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);

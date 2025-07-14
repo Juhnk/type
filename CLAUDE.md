@@ -314,6 +314,94 @@ npm run test:watch   # Watch mode
 npm run test:e2e     # E2E tests
 ```
 
+### AI Mode Configuration
+To enable AI-powered text generation features:
+
+1. **Obtain an Anthropic API Key**:
+   - Visit https://console.anthropic.com/
+   - Create an account or sign in
+   - Generate an API key from the API section
+
+2. **Configure the API Key**:
+   - Add the key to `packages/api/.env`:
+   ```bash
+   ANTHROPIC_API_KEY=your-actual-api-key-here
+   ```
+   - Replace `your-actual-api-key-here` with your actual API key
+   - The API will reject placeholder values like 'your-anthropic-api-key-here'
+
+3. **Restart the Backend**:
+   - If services are running, restart them with `Ctrl+C` then `npm run dev:full`
+   - The API will automatically pick up the new environment variable
+
+4. **Using AI Mode**:
+   - AI features require user authentication
+   - Access AI mode through the typing interface after logging in
+   - Choose between simple topic input or advanced wizard mode
+   - The AI generates contextual typing content based on your input
+
+**Note**: Without a valid API key, AI features will return a 503 error: "AI service is not configured"
+
+## Environment Variable Loading
+
+### Critical Implementation Details
+
+The TypeAmp API uses a specific environment variable loading pattern that **MUST** be maintained for proper functionality, especially for AI features.
+
+#### Loading Order Requirements
+
+1. **Environment variables MUST be loaded at the very top of `index.ts`**:
+   ```typescript
+   // packages/api/src/index.ts
+   // Load environment variables before anything else
+   import { config } from 'dotenv';
+   // ... dotenv configuration ...
+   
+   // Only AFTER loading env vars, import other modules
+   import Fastify from 'fastify';
+   import { SERVER_CONFIG } from './config/app.config.js';
+   ```
+
+2. **Why this is critical**:
+   - Configuration modules like `app.config.ts` are imported and evaluated when referenced
+   - If dotenv isn't loaded first, `process.env` will be empty when configs are created
+   - This causes features like AI mode to fail with "service not configured" errors
+
+3. **The loading mechanism**:
+   - The API attempts to load `.env` from multiple locations (fallback mechanism)
+   - Primary location: `packages/api/.env`
+   - Fallback locations: `packages/.env`, root `.env`
+   - First successful load wins
+
+4. **Verification**:
+   ```bash
+   # Check API logs for successful loading:
+   tail -f logs/api.log
+   
+   # Should see:
+   # [ENV] Successfully loaded environment variables from: /path/to/packages/api/.env
+   # [ENV] ANTHROPIC_API_KEY: sk-ant-api03-...
+   ```
+
+#### Common Pitfalls to Avoid
+
+1. **DO NOT move the dotenv loading**:
+   - It must remain at the top of `index.ts`
+   - Moving it after imports will break environment-dependent features
+
+2. **DO NOT add quotes around values in .env**:
+   ```bash
+   # ❌ WRONG
+   ANTHROPIC_API_KEY="sk-ant-api03-..."
+   
+   # ✅ CORRECT
+   ANTHROPIC_API_KEY=sk-ant-api03-...
+   ```
+
+3. **DO NOT rely on the root .env for API-specific variables**:
+   - Always use `packages/api/.env` for API configuration
+   - The root `.env` has different/conflicting values
+
 ### Git Workflow
 - Feature branches: `feature/description`
 - Commit format: `type(scope): message`
@@ -499,6 +587,7 @@ npm run storybook   # Component development
 - Database Schema: `packages/api/prisma/schema.prisma`
 - Design Tokens: `packages/web/src/styles/design-tokens.css`
 - Environment: `.env` (local development)
+- Architecture Diagrams: `docs/architecture/ARCHITECTURE_DIAGRAMS.md`
 
 ### Key Libraries Docs
 - [Next.js 15](https://nextjs.org/docs)
@@ -507,5 +596,60 @@ npm run storybook   # Component development
 - [Zustand](https://zustand-demo.pmnd.rs/)
 - [Fastify](https://fastify.dev)
 - [Prisma](https://www.prisma.io/docs)
+
+## Common Pitfalls & Solutions
+
+### API Client Header Merging
+When using the spread operator with fetch options, be careful about the order to avoid losing headers:
+
+**❌ WRONG - Headers will be overwritten:**
+```typescript
+const config = {
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  },
+  ...options,  // This overwrites the entire headers object!
+};
+```
+
+**✅ CORRECT - Headers are properly merged:**
+```typescript
+const config = {
+  ...options,  // Spread options first
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers,  // Then merge headers
+  },
+};
+```
+
+This issue can cause Fastify to receive requests without Content-Type headers, resulting in "body must be object" errors as it defaults to plain text parsing.
+
+### Environment Variable Loading Order
+
+**❌ WRONG - Loading env vars after imports:**
+```typescript
+// packages/api/src/index.ts
+import Fastify from 'fastify';
+import { SERVER_CONFIG } from './config/app.config.js';
+import { config } from 'dotenv';  // Too late!
+
+config();  // Environment variables won't be available in SERVER_CONFIG
+```
+
+**✅ CORRECT - Loading env vars before any imports:**
+```typescript
+// packages/api/src/index.ts
+// Load environment variables before anything else
+import { config } from 'dotenv';
+config({ path: join(__dirname, '../.env') });
+
+// Now import other modules
+import Fastify from 'fastify';
+import { SERVER_CONFIG } from './config/app.config.js';
+```
+
+This issue causes configuration values to be undefined or use defaults, breaking features like AI mode authentication.
 
 This documentation represents the current state of TypeAmp as of January 2025. Always verify patterns by checking existing code examples in the codebase.

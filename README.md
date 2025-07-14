@@ -22,6 +22,17 @@ TypeAmp is a modern, full-stack typing game application designed to help users i
 - 📱 **Responsive Design** - Optimized for desktop and mobile devices
 - 🚀 **High Performance** - Optimized for speed with advanced caching strategies
 
+## 📚 Documentation
+
+Comprehensive documentation is available in the [`docs/`](./docs/) directory:
+
+- **[Getting Started](./docs/development/DEVELOPER_SETUP.md)** - Developer setup and installation
+- **[Contributing](./docs/development/CONTRIBUTING.md)** - Contribution guidelines
+- **[Architecture](./docs/architecture/GDD.md)** - Game design and technical architecture
+- **[Architecture Diagrams](./docs/architecture/ARCHITECTURE_DIAGRAMS.md)** - Visual architecture diagrams
+- **[Deployment](./docs/deployment/)** - Production deployment guides
+- **[Testing](./docs/testing/)** - Test strategies and results
+
 ## 🏗️ Architecture
 
 TypeAmp is built as a **Turborepo monorepo** with enterprise-grade architecture:
@@ -96,7 +107,24 @@ typeamp/
    # Edit the files with your configuration
    ```
 
-4. **Set up the database**
+4. **Configure AI Mode (Optional)**
+   
+   To enable AI-powered text generation:
+   
+   a. **Get an Anthropic API Key**
+   - Visit [console.anthropic.com](https://console.anthropic.com/)
+   - Create an account or sign in
+   - Generate an API key
+   
+   b. **Add the key to your environment**
+   ```bash
+   # Edit packages/api/.env and add:
+   ANTHROPIC_API_KEY=your-actual-api-key-here
+   ```
+   
+   > **Important**: The API key must be added to `packages/api/.env`, not the root `.env` file.
+
+5. **Set up the database**
    ```bash
    # Navigate to API package
    cd packages/api
@@ -108,13 +136,13 @@ typeamp/
    npm run db:seed
    ```
 
-5. **Start development servers**
+6. **Start development servers**
    ```bash
    # From the root directory
    npm run dev
    ```
 
-6. **Access the application**
+7. **Access the application**
    - **Frontend**: http://localhost:3000
    - **Backend API**: http://localhost:3003
    - **API Documentation**: http://localhost:3003/docs
@@ -317,6 +345,56 @@ TypeAmp is optimized for speed and efficiency:
 - [ ] Social features and leaderboards
 - [ ] Mobile app development
 - [ ] Multiplayer typing competitions
+
+## 🔧 Troubleshooting
+
+### AI Service Issues
+
+**Problem**: "AI service is not available. Please ensure the API key is configured"
+
+**Solution**:
+1. Verify your Anthropic API key is correctly set in `packages/api/.env`:
+   ```bash
+   ANTHROPIC_API_KEY=sk-ant-api03-...your-actual-key...
+   ```
+
+2. Check the API logs to confirm the key is loaded:
+   ```bash
+   tail -f logs/api.log
+   # Look for: [ENV] ANTHROPIC_API_KEY: sk-ant-api03-...
+   ```
+
+3. If the key still isn't loading:
+   - Ensure the `.env` file is in `packages/api/`, not the root directory
+   - Restart the API server completely: `npm run dev:reset`
+   - Check for quotes around the API key (remove them if present)
+
+4. Verify the API service started correctly:
+   ```bash
+   # The logs should show:
+   # [ENV] Successfully loaded environment variables from: /path/to/packages/api/.env
+   ```
+
+### Common Development Issues
+
+**Port Already in Use**
+```bash
+# Kill all Node processes
+killall -9 node
+
+# Or use the reset command
+npm run dev:reset
+```
+
+**Database Connection Failed**
+```bash
+# Ensure PostgreSQL is running
+sudo systemctl status postgresql
+
+# Reset the database
+cd packages/api
+npm run db:reset
+```
 
 ## 📄 License
 
