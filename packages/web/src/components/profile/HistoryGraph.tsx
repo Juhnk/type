@@ -81,7 +81,7 @@ export function HistoryGraph({ testHistory }: HistoryGraphProps) {
               </p>
             ) : (
               <p className="text-sm">
-                <span className="font-medium text-green-600">Accuracy:</span>{' '}
+                <span className="text-success font-medium">Accuracy:</span>{' '}
                 {data.accuracy}%
               </p>
             )}

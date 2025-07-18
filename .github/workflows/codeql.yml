@@ -1,0 +1,181 @@
+name: CodeQL Security Analysis
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+  schedule:
+    # Run CodeQL analysis every Sunday at 2 AM UTC
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze Code
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript, typescript]
+        # Add more languages as needed: cpp, csharp, go, java, python, etc.
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # Override language selection by uncommenting this and choosing your languages
+          # languages: javascript, typescript
+          # Use queries from the github/codeql repository
+          queries: security-extended,security-and-quality
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            **/node_modules
+          key: ${{ runner.os }}-node-codeql-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-codeql-
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npm run generate --workspace=@typeamp/api
+
+      - name: Build TypeScript projects
+        run: |
+          npm run build --workspace=type
+          npm run build --workspace=@typeamp/api
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
+          upload: true
+
+  upload-sarif:
+    name: Upload SARIF Results
+    runs-on: ubuntu-latest
+    needs: analyze
+    if: always()
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Download SARIF results
+        uses: actions/download-artifact@v4
+        with:
+          name: sarif-results
+          path: sarif-results
+        continue-on-error: true
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: sarif-results
+        continue-on-error: true
+
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: analyze
+    if: always()
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Generate security summary
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const conclusion = '${{ needs.analyze.result }}';
+            const runId = '${{ github.run_id }}';
+            const runUrl = `${{ github.server_url }}/${{ github.repository }}/actions/runs/${runId}`;
+            
+            let emoji = '✅';
+            let status = 'passed';
+            
+            if (conclusion === 'failure') {
+              emoji = '❌';
+              status = 'failed';
+            } else if (conclusion === 'cancelled') {
+              emoji = '⏸️';
+              status = 'cancelled';
+            }
+            
+            const summary = `${emoji} **CodeQL Security Analysis ${status}**
+            
+            - **Repository**: ${{ github.repository }}
+            - **Commit**: ${{ github.sha }}
+            - **Branch**: ${{ github.ref_name }}
+            - **Workflow Run**: [View Details](${runUrl})
+            
+            ${conclusion === 'success' ? '✅ No security vulnerabilities detected by CodeQL analysis.' : ''}
+            ${conclusion === 'failure' ? '⚠️ Security vulnerabilities detected. Please review the CodeQL results.' : ''}
+            
+            For detailed results, check the [Security tab](https://github.com/${{ github.repository }}/security) in your repository.`;
+            
+            // Create or update a summary comment for PRs
+            if (context.eventName === 'pull_request') {
+              const { data: comments } = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+              });
+              
+              const botComment = comments.find(comment => 
+                comment.user.type === 'Bot' && comment.body.includes('CodeQL Security Analysis')
+              );
+              
+              if (botComment) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: botComment.id,
+                  body: summary
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: summary
+                });
+              }
+            }
+            
+            // Set job summary
+            await core.summary
+              .addHeading('CodeQL Security Analysis Results')
+              .addRaw(summary)
+              .write();

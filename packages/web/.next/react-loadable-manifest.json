@@ -1,1 +1,6 @@
-{}
+{
+  "store/useSettingsStore.ts -> @/lib/api-client": {
+    "id": "store/useSettingsStore.ts -> @/lib/api-client",
+    "files": []
+  }
+}

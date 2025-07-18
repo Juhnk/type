@@ -10,15 +10,16 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
   id           String         @id @default(cuid())
   email        String         @unique
   passwordHash String
-  createdAt    DateTime       @default(now()) @db.Timestamptz(3)
+  createdAt    DateTime       @default(now())
   
   userSettings UserSettings?
   testResults  TestResult[]
@@ -27,12 +28,39 @@ model User {
 }
 
 model UserSettings {
-  userId       String   @id
-  theme        String   @default("slate") @db.VarChar(50)
-  caretStyle   String   @default("line") @db.VarChar(20)
-  paceCaretWpm Int      @default(0)
+  userId              String   @id
   
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  // Appearance Settings
+  theme               String   @default("slate")
+  font                String   @default("Roboto Mono")
+  fontSize            Int      @default(18)
+  caretStyle          String   @default("line")
+  caretColor          String   @default("#3b82f6")
+  colorScheme         String   @default("auto")
+  animations          Boolean  @default(true)
+  smoothCaret         Boolean  @default(true)
+  showWpmCounter      Boolean  @default(true)
+  showAccuracyCounter Boolean  @default(true)
+  
+  // Behavior Settings
+  soundEffects        Boolean  @default(false)
+  keyFeedback         Boolean  @default(false)
+  defaultMode         String   @default("time")
+  defaultDifficulty   String   @default("Normal")
+  defaultDuration     Int      @default(60)
+  defaultWordCount    Int      @default(50)
+  paceCaretWpm        Int      @default(0)
+  paceCaretEnabled    Boolean  @default(false)
+  autoSave            Boolean  @default(true)
+  focusMode           Boolean  @default(false)
+  quickRestart        Boolean  @default(true)
+  blindMode           Boolean  @default(false)
+  
+  // Timestamps
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   
   @@map("UserSettings")
 }
@@ -44,9 +72,9 @@ model TestResult {
   accuracy     Float
   rawWpm       Int
   consistency  Float?
-  config       Json     @db.JsonB
-  tags         String[]
-  timestamp    DateTime @default(now()) @db.Timestamptz(3)
+  config       String
+  tags         String
+  timestamp    DateTime @default(now())
   
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   

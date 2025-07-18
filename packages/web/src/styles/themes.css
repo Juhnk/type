@@ -1,0 +1,149 @@
+/* Theme Variables */
+:root {
+  --typing-font: 'Roboto Mono', monospace;
+  --caret-color: #3b82f6;
+}
+
+/* Slate Theme (Default) */
+[data-theme='slate'] {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --primary: 222.2 47.4% 11.2%;
+  --primary-foreground: 210 40% 98%;
+}
+
+[data-theme='slate'].dark {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --primary: 210 40% 98%;
+  --primary-foreground: 222.2 47.4% 11.2%;
+}
+
+/* Dark Theme */
+[data-theme='dark'] {
+  --background: 0 0% 100%;
+  --foreground: 0 0% 0%;
+  --muted: 0 0% 90%;
+  --muted-foreground: 0 0% 40%;
+  --primary: 0 0% 0%;
+  --primary-foreground: 0 0% 100%;
+}
+
+[data-theme='dark'].dark {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+  --muted: 0 0% 10%;
+  --muted-foreground: 0 0% 60%;
+  --primary: 0 0% 100%;
+  --primary-foreground: 0 0% 0%;
+}
+
+/* Nord Theme */
+[data-theme='nord'] {
+  --background: 220 16% 96%;
+  --foreground: 220 16% 20%;
+  --muted: 220 16% 90%;
+  --muted-foreground: 220 16% 40%;
+  --primary: 213 32% 52%;
+  --primary-foreground: 0 0% 100%;
+}
+
+[data-theme='nord'].dark {
+  --background: 220 16% 16%;
+  --foreground: 218 27% 94%;
+  --muted: 220 16% 20%;
+  --muted-foreground: 220 16% 60%;
+  --primary: 213 32% 52%;
+  --primary-foreground: 0 0% 100%;
+}
+
+/* Dracula Theme */
+[data-theme='dracula'] {
+  --background: 231 15% 95%;
+  --foreground: 231 15% 18%;
+  --muted: 231 15% 90%;
+  --muted-foreground: 231 15% 40%;
+  --primary: 265 89% 78%;
+  --primary-foreground: 0 0% 100%;
+}
+
+[data-theme='dracula'].dark {
+  --background: 231 15% 18%;
+  --foreground: 60 30% 96%;
+  --muted: 232 14% 31%;
+  --muted-foreground: 231 15% 65%;
+  --primary: 265 89% 78%;
+  --primary-foreground: 231 15% 18%;
+}
+
+/* Monokai Theme */
+[data-theme='monokai'] {
+  --background: 70 8% 95%;
+  --foreground: 70 8% 15%;
+  --muted: 70 8% 90%;
+  --muted-foreground: 70 8% 40%;
+  --primary: 80 61% 50%;
+  --primary-foreground: 0 0% 100%;
+}
+
+[data-theme='monokai'].dark {
+  --background: 70 8% 15%;
+  --foreground: 60 30% 96%;
+  --muted: 60 7% 22%;
+  --muted-foreground: 70 8% 65%;
+  --primary: 80 61% 50%;
+  --primary-foreground: 70 8% 15%;
+}
+
+/* Ocean Theme */
+[data-theme='ocean'] {
+  --background: 214 32% 95%;
+  --foreground: 214 32% 10%;
+  --muted: 214 32% 90%;
+  --muted-foreground: 214 32% 40%;
+  --primary: 213 94% 60%;
+  --primary-foreground: 0 0% 100%;
+}
+
+[data-theme='ocean'].dark {
+  --background: 222 47% 11%;
+  --foreground: 213 31% 91%;
+  --muted: 223 47% 20%;
+  --muted-foreground: 215 20% 65%;
+  --primary: 213 94% 60%;
+  --primary-foreground: 222 47% 11%;
+}
+
+/* Typing Area Styles */
+.typing-container {
+  font-family: var(--typing-font);
+}
+
+/* Caret Animations */
+@keyframes blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.caret {
+  animation: blink 1.06s infinite;
+}
+
+/* Disable animations when requested */
+.no-animations * {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Font Loading */
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600&family=Fira+Code:wght@400;500;600&family=Source+Code+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');

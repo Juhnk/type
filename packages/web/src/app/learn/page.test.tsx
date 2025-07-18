@@ -49,12 +49,12 @@ describe('LearnPage', () => {
       push: mockPush,
     });
 
-    (useGameStore as ReturnType<typeof vi.fn>).mockReturnValue({
+    (useGameStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       setTextToType: mockSetTextToType,
       setTestConfig: mockSetTestConfig,
     });
 
-    (useAuthStore as ReturnType<typeof vi.fn>).mockReturnValue({
+    (useAuthStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       token: 'mock-auth-token',
     });
   });
@@ -137,7 +137,7 @@ describe('LearnPage', () => {
     const user = userEvent.setup();
 
     // Mock no auth token
-    (useAuthStore as ReturnType<typeof vi.fn>).mockReturnValue({
+    (useAuthStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       token: null,
     });
 

@@ -233,7 +233,7 @@ export default function ProfilePage() {
                   <TableCell className="font-semibold">{result.wpm}</TableCell>
                   <TableCell>
                     <span
-                      className={result.accuracy >= 95 ? 'text-green-600' : ''}
+                      className={result.accuracy >= 95 ? 'text-success' : ''}
                     >
                       {result.accuracy}%
                     </span>

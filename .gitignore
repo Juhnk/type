@@ -12,13 +12,18 @@
 
 # testing
 /coverage
+coverage/
+.vitest/
 
 # next.js
 /.next/
 /out/
+**/next/
+**/.next/
 
 # production
 /build
+dist/
 
 # misc
 .DS_Store
@@ -44,3 +49,39 @@ packages/api/node_modules/
 # Docker volumes
 postgres_data/
 .docker/
+
+# Database files
+*.db
+*.db-journal
+prisma/dev.db*
+
+# Development logs
+*.log
+api.log
+dev.log
+
+# Runtime process files
+*.pid
+
+# Prisma generated files
+packages/api/src/generated/
+
+# Temporary files
+*.tmp
+*.temp
+
+*storybook.log
+storybook-static
+
+# Storybook cache
+**/node_modules/.cache/storybook/
+.cache/
+
+# Backup files
+*.db.gz
+backups/
+
+# Sprint documentation (if not needed)
+SPRINT*.md
+*_COMPLETION.md
+*_TEST_RESULTS.md

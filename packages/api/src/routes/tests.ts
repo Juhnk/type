@@ -140,8 +140,8 @@ export async function testRoutes(fastify: FastifyInstance) {
             accuracy: testResult.accuracy,
             rawWpm: testResult.rawWpm,
             consistency: testResult.consistency || null,
-            config: testResult.config,
-            tags: testResult.tags,
+            config: JSON.stringify(testResult.config),
+            tags: JSON.stringify(testResult.tags),
             timestamp: testResult.timestamp ? new Date(testResult.timestamp) : new Date()
           }
         });
@@ -212,14 +212,13 @@ export async function testRoutes(fastify: FastifyInstance) {
           accuracy: testResult.accuracy,
           rawWpm: testResult.rawWpm,
           consistency: testResult.consistency || null,
-          config: testResult.config,
-          tags: testResult.tags,
+          config: JSON.stringify(testResult.config),
+          tags: JSON.stringify(testResult.tags),
           timestamp: testResult.timestamp ? new Date(testResult.timestamp) : new Date()
         }));
 
         const result = await prisma.testResult.createMany({
-          data: testResultsData,
-          skipDuplicates: false
+          data: testResultsData
         });
 
         return reply.status(201).send({

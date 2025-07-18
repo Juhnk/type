@@ -55,7 +55,10 @@ export function AuthModal() {
 
   const onLoginSubmit = async (data: AuthFormData) => {
     try {
-      const response = await loginUser(data);
+      const response = await loginUser({
+        email: data.email,
+        password: data.password,
+      });
       toast.success('Login successful!');
       // Save user session to auth store
       login(response.user, response.token);
@@ -85,7 +88,10 @@ export function AuthModal() {
 
   const onRegisterSubmit = async (data: AuthFormData) => {
     try {
-      const response = await registerUser(data);
+      const response = await registerUser({
+        email: data.email,
+        password: data.password,
+      });
       toast.success('Registration successful!');
       // Save user session to auth store
       login(response.user, response.token);

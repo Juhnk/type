@@ -6,20 +6,50 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc --noEmit",
-    "generate": "prisma generate"
+    "type-check": "tsc --noEmit",
+    "lint": "echo 'No linting configured for API package'",
+    "generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:reset": "prisma db push --force-reset",
+    "db:studio": "prisma studio",
+    "db:backup": "tsx src/database/management.ts backup",
+    "db:restore": "tsx src/database/management.ts restore",
+    "db:migrate": "tsx src/database/management.ts migrate",
+    "db:analyze": "tsx src/database/management.ts analyze",
+    "db:vacuum": "tsx src/database/management.ts vacuum",
+    "seed": "tsx src/database/seed.ts development",
+    "seed:minimal": "tsx src/database/seed.ts minimal",
+    "seed:production": "tsx src/database/seed.ts production",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "test:run": "vitest run",
+    "test:unit": "vitest run --exclude '**/*.integration.test.ts'",
+    "test:integration": "vitest run --include '**/*.integration.test.ts'",
+    "test:debug": "vitest --inspect-brk --inspect --no-file-parallelism"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.56.0",
+    "@faker-js/faker": "^9.9.0",
+    "@fastify/cors": "^11.0.1",
     "@fastify/jwt": "^9.1.0",
     "@prisma/client": "^6.11.1",
     "bcrypt": "^6.0.0",
     "fastify": "^5.2.0"
   },
   "devDependencies": {
+    "@fastify/swagger": "^9.5.1",
+    "@fastify/swagger-ui": "^5.2.3",
     "@types/bcrypt": "^5.0.2",
     "@types/node": "^22.5.4",
+    "@types/supertest": "^6.0.3",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/ui": "^3.2.4",
     "prisma": "^6.11.1",
+    "supertest": "^7.1.1",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^3.2.4"
   }
 }

@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{}";
+self.__REACT_LOADABLE_MANIFEST="{\"store/useSettingsStore.ts -> @/lib/api-client\":{\"id\":\"store/useSettingsStore.ts -> @/lib/api-client\",\"files\":[]}}"

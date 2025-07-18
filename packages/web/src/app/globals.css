@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
+@import '../styles/design-tokens.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -37,6 +38,18 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-success: var(--color-success);
+  --color-success-foreground: var(--color-success-foreground);
+  --color-success-soft: var(--color-success-soft);
+  --color-error: var(--color-error);
+  --color-error-foreground: var(--color-error-foreground);
+  --color-error-soft: var(--color-error-soft);
+  --color-warning: var(--color-warning);
+  --color-warning-foreground: var(--color-warning-foreground);
+  --color-warning-soft: var(--color-warning-soft);
+  --color-info: var(--color-info);
+  --color-info-foreground: var(--color-info-foreground);
+  --color-info-soft: var(--color-info-soft);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -76,6 +89,19 @@
   --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
+  /* Semantic Status Colors */
+  --color-success: oklch(0.6 0.118 184.704);
+  --color-success-foreground: oklch(1 0 0);
+  --color-success-soft: oklch(0.6 0.118 184.704 / 0.1);
+  --color-error: oklch(0.577 0.245 27.325);
+  --color-error-foreground: oklch(0.984 0.003 247.858);
+  --color-error-soft: oklch(0.577 0.245 27.325 / 0.1);
+  --color-warning: oklch(0.828 0.189 84.429);
+  --color-warning-foreground: oklch(0.129 0.042 264.695);
+  --color-warning-soft: oklch(0.828 0.189 84.429 / 0.1);
+  --color-info: oklch(0.488 0.243 264.376);
+  --color-info-foreground: oklch(1 0 0);
+  --color-info-soft: oklch(0.488 0.243 264.376 / 0.1);
 }
 
 .dark {
@@ -110,6 +136,19 @@
   --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
+  /* Semantic Status Colors - Dark Mode */
+  --color-success: oklch(0.696 0.17 162.48);
+  --color-success-foreground: oklch(1 0 0);
+  --color-success-soft: oklch(0.696 0.17 162.48 / 0.1);
+  --color-error: oklch(0.704 0.191 22.216);
+  --color-error-foreground: oklch(0.984 0.003 247.858);
+  --color-error-soft: oklch(0.704 0.191 22.216 / 0.1);
+  --color-warning: oklch(0.769 0.188 70.08);
+  --color-warning-foreground: oklch(0.129 0.042 264.695);
+  --color-warning-soft: oklch(0.769 0.188 70.08 / 0.1);
+  --color-info: oklch(0.6 0.118 184.704);
+  --color-info-foreground: oklch(1 0 0);
+  --color-info-soft: oklch(0.6 0.118 184.704 / 0.1);
 }
 
 @layer base {
@@ -119,4 +158,51 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Custom animations */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+/* Ultra-smooth scrolling optimizations for typing text */
+.scrolling-text {
+  transition: transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
+  transform-origin: top left;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+.scrolling-text-line {
+  height: 2rem; /* Exactly 32px - matches leading-8 */
+  line-height: 2rem;
+  display: flex;
+  align-items: center;
+  contain: layout style;
+  transform: translateZ(0); /* Individual line hardware acceleration */
+}
+
+/* Performance optimizations */
+.typing-container {
+  contain: layout style paint;
+  transform: translateZ(0); /* Force hardware acceleration */
+  isolation: isolate; /* Create new stacking context */
+}
+
+/* Eliminate sub-pixel rendering issues */
+.ultra-smooth-text {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeSpeed;
+  transform: translateZ(0);
 }
